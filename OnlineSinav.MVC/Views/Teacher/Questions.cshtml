@@ -1,0 +1,91 @@
+﻿@model int  
+@* ExamId *@
+@{
+    ViewData["Title"] = "Soruları Yönet";
+}
+
+<h2>Sınav ID: @Model - Soru Ekle</h2>
+<form id="questionForm">
+    <div class="mb-3">
+        <label class="form-label">Soru Metni</label>
+        <textarea id="QuestionText" class="form-control" required></textarea>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Puan</label>
+        <input id="Points" type="number" class="form-control" value="10" min="1" />
+    </div>
+    <button type="submit" class="btn btn-primary">Soruyu Ekle</button>
+</form>
+
+<hr />
+<h3>Şık Ekle (en son eklenen soruya)</h3>
+<div class="alert alert-info">Önce bir soru ekleyin, ardından o sorunun ID'sini alıp şık ekleyebilirsiniz.</div>
+<form id="optionForm">
+    <div class="mb-3">
+        <label class="form-label">Soru ID</label>
+        <input id="ExamQuestionId" type="number" class="form-control" required />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Şık Metni</label>
+        <input id="OptionText" class="form-control" required />
+    </div>
+    <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="IsCorrect" />
+        <label class="form-check-label">Doğru Cevap</label>
+    </div>
+    <button type="submit" class="btn btn-info">Şık Ekle</button>
+</form>
+
+<a href="/Teacher/Index" class="btn btn-secondary mt-3">Geri</a>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+        $(function() {
+            $('#questionForm').submit(function(e) {
+                e.preventDefault();
+                let data = {
+                    examId: @Model,
+                    questionText: $('#QuestionText').val(),
+                    points: parseInt($('#Points').val())
+                };
+                $.ajax({
+                    url: 'http://localhost:5043/api/Exam/AddQuestion',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(data),
+                    success: function(res) {
+                        alert(res.message);
+                        $('#QuestionText').val('');
+                    },
+                    error: function(xhr) {
+                        alert('Hata: ' + (xhr.responseJSON?.message || 'Eklenemedi'));
+                    }
+                });
+            });
+
+            $('#optionForm').submit(function(e) {
+                e.preventDefault();
+                let data = {
+                    examQuestionId: parseInt($('#ExamQuestionId').val()),
+                    optionText: $('#OptionText').val(),
+                    isCorrect: $('#IsCorrect').is(':checked')
+                };
+                $.ajax({
+                    url: 'http://localhost:5043/api/Exam/AddOption',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(data),
+                    success: function(res) {
+                        alert(res.message);
+                        $('#OptionText').val('');
+                        $('#IsCorrect').prop('checked', false);
+                    },
+                    error: function(xhr) {
+                        alert('Hata: ' + (xhr.responseJSON?.message || 'Eklenemedi'));
+                    }
+                });
+            });
+        });
+    </script>
+}

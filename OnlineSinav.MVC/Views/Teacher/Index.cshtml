@@ -1,0 +1,61 @@
+﻿@{
+    ViewData["Title"] = "Sınav Yönetimi";
+}
+
+<h2>Sınav Yönetimi</h2>
+<a href="/Teacher/Create" class="btn btn-primary mb-3">Yeni Sınav Ekle</a>
+
+<div id="examList" class="row"></div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+        $(function() {
+            loadExams();
+
+            function loadExams() {
+                $.get('http://localhost:5043/api/Exam', function(data) {
+                    let html = '';
+                    if (data && data.length > 0) {
+                        $.each(data, function(i, exam) {
+                            html += `
+                            <div class="col-md-6 mb-3">
+                                <div class="card shadow-sm">
+                                    <div class="card-body">
+                                        <h5>${exam.title}</h5>
+                                        <p>Süre: ${exam.durationInMinutes} dk | Soru: ${exam.questionCount}</p>
+                                        <div class="btn-group">
+                                            <a href="/Teacher/Edit/${exam.id}" class="btn btn-sm btn-warning">Düzenle</a>
+                                            <a href="/Teacher/Questions?examId=${exam.id}" class="btn btn-sm btn-info">Soru Ekle</a>
+                                            <a href="/Teacher/Results?examId=${exam.id}" class="btn btn-sm btn-secondary">Sonuçlar</a>
+                                            <button class="btn btn-sm btn-danger btn-delete" data-id="${exam.id}">Sil</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>`;
+                        });
+                    } else {
+                        html = '<div class="alert alert-info">Henüz sınav bulunmamaktadır.</div>';
+                    }
+                    $('#examList').html(html);
+                });
+            }
+
+            $(document).on('click', '.btn-delete', function() {
+                let id = $(this).data('id');
+                if (confirm('Sınavı pasif yapmak istediğinize emin misiniz?')) {
+                    $.ajax({
+                        url: `http://localhost:5043/api/Exam/${id}`,
+                        type: 'DELETE',
+                        success: function() {
+                            loadExams();
+                        },
+                        error: function(xhr) {
+                            alert('Hata: ' + (xhr.responseJSON?.message || 'Silinemedi'));
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,86 @@
+﻿@model int?  
+@* düzenleme için exam id, yoksa null *@
+@{
+    ViewData["Title"] = Model == null ? "Yeni Sınav" : "Sınav Düzenle";
+    bool isEdit = Model != null;
+}
+
+<h2>@ViewData["Title"]</h2>
+<form id="examForm">
+    <input type="hidden" id="ExamId" value="@(isEdit ? Model.ToString() : "")" />
+    <div class="mb-3">
+        <label class="form-label">Başlık</label>
+        <input id="Title" class="form-control" required />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Açıklama</label>
+        <textarea id="Description" class="form-control" rows="3"></textarea>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Süre (dakika)</label>
+        <input id="DurationInMinutes" type="number" class="form-control" required min="1" />
+    </div>
+    @if (isEdit)
+    {
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="IsActive" checked />
+            <label class="form-check-label">Aktif</label>
+        </div>
+    }
+    <button type="submit" class="btn btn-success">Kaydet</button>
+    <a href="/Teacher/Index" class="btn btn-secondary">Geri</a>
+</form>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+        $(function() {
+            // Düzenleme modunda veriyi doldur
+            @if (isEdit)
+            {
+                <text>
+                $.get(`http://localhost:5043/api/Exam/@Model`, function(data) {
+                    $('#Title').val(data.title);
+                    $('#Description').val(data.description);
+                    $('#DurationInMinutes').val(data.durationInMinutes);
+                    $('#IsActive').prop('checked', data.isActive);
+                });
+                </text>
+            }
+
+            $('#examForm').submit(function(e) {
+                e.preventDefault();
+                let id = $('#ExamId').val();
+                let examData = {
+                    title: $('#Title').val(),
+                    description: $('#Description').val(),
+                    durationInMinutes: parseInt($('#DurationInMinutes').val()),
+                    isActive: $('#IsActive').is(':checked')
+                };
+
+                let url, type;
+                if (id) {
+                    examData.id = parseInt(id);
+                    url = `http://localhost:5043/api/Exam/${id}`;
+                    type = 'PUT';
+                } else {
+                    url = 'http://localhost:5043/api/Exam';
+                    type = 'POST';
+                }
+
+                $.ajax({
+                    url: url,
+                    type: type,
+                    contentType: 'application/json',
+                    data: JSON.stringify(examData),
+                    success: function() {
+                        window.location.href = '/Teacher/Index';
+                    },
+                    error: function(xhr) {
+                        alert('Hata: ' + (xhr.responseJSON?.message || 'İşlem başarısız'));
+                    }
+                });
+            });
+        });
+    </script>
+}

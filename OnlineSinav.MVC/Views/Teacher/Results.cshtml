@@ -1,0 +1,37 @@
+﻿@model int  
+@* ExamId *@
+@{
+    ViewData["Title"] = "Sınav Sonuçları";
+}
+
+<h2>Sınav Sonuçları (ID: @Model)</h2>
+<table class="table table-bordered" id="resultsTable">
+    <thead><tr><th>Öğrenci</th><th>Numara</th><th>Puan</th><th>Tarih</th></tr></thead>
+    <tbody></tbody>
+</table>
+
+<a href="/Teacher/Index" class="btn btn-secondary">Geri</a>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+        $(function() {
+            $.get(`http://localhost:5043/api/Result/Exam/@Model`, function(res) {
+                if (res.status && res.data) {
+                    let rows = '';
+                    $.each(res.data, function(i, r) {
+                        rows += `<tr>
+                            <td>${r.studentName}</td>
+                            <td>${r.studentNumber || '-'}</td>
+                            <td>${r.score}</td>
+                            <td>${new Date(r.submitDate).toLocaleString()}</td>
+                        </tr>`;
+                    });
+                    $('#resultsTable tbody').html(rows);
+                } else {
+                    $('#resultsTable tbody').html('<tr><td colspan="4">Sonuç bulunamadı.</td></tr>');
+                }
+            });
+        });
+    </script>
+}

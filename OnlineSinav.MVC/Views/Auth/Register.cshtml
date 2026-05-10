@@ -1,0 +1,42 @@
+﻿@model OnlineSinav.MVC.Models.DTOs.UserRegisterDto
+@{
+    ViewData["Title"] = "Kaydol";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-4">
+        <h2 class="mb-4">Öğrenci Kaydı</h2>
+        <form asp-action="Register" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="mb-3">
+                <label asp-for="FullName" class="form-label"></label>
+                <input asp-for="FullName" class="form-control" placeholder="Ad soyad" />
+                <span asp-validation-for="FullName" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="UserName" class="form-label"></label>
+                <input asp-for="UserName" class="form-control" placeholder="Kullanıcı adı" />
+                <span asp-validation-for="UserName" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control" placeholder="E-posta" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label"></label>
+                <input asp-for="Password" class="form-control" type="password" placeholder="Şifre" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="StudentNumber" class="form-label"></label>
+                <input asp-for="StudentNumber" class="form-control" placeholder="Öğrenci no (opsiyonel)" />
+                <span asp-validation-for="StudentNumber" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-success w-100">Kaydol</button>
+        </form>
+        <div class="mt-3 text-center">
+            <a asp-action="Login">Zaten hesabın var mı? Giriş yap</a>
+        </div>
+    </div>
+</div>

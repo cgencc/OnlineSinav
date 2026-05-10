@@ -1,0 +1,108 @@
+﻿@model OnlineSinav.MVC.Models.DTOs.ExamDetailDto
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="exam-container" data-exam-id="@Model.Id">
+    <h2>@Model.Title</h2>
+    <p>Süre: <span id="timerDisplay">@Model.DurationInMinutes:00</span></p>
+    <hr />
+
+    <form id="examForm">
+        @foreach (var question in Model.Questions.Select((q, index) => new { q, index }))
+        {
+            <div class="card mb-3">
+                <div class="card-header">
+                    <strong>Soru @(question.index + 1)</strong> (@question.q.Points puan)
+                </div>
+                <div class="card-body">
+                    <p>@question.q.QuestionText</p>
+                    @foreach (var option in question.q.Options)
+                    {
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio"
+                                   name="answers[@question.index].SelectedOptionId"
+                                   value="@option.Id"
+                                   id="opt_@question.index@option.Id" />
+                            <label class="form-check-label" for="opt_@question.index@option.Id">
+                                @option.OptionText
+                            </label>
+                        </div>
+                    }
+                    <input type="hidden" name="answers[@question.index].QuestionId" value="@question.q.Id" />
+                </div>
+            </div>
+        }
+        <button type="button" id="submitExam" class="btn btn-success btn-lg w-100">Sınavı Tamamla</button>
+    </form>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Süre sayacı
+            let durationInMinutes = @Model.DurationInMinutes;
+            let totalSeconds = durationInMinutes * 60;
+            const timerDisplay = $('#timerDisplay');
+
+            const timerInterval = setInterval(function () {
+                if (totalSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    submitExam(); // süre doldu, otomatik gönder
+                    return;
+                }
+                totalSeconds--;
+                let mins = Math.floor(totalSeconds / 60);
+                let secs = totalSeconds % 60;
+                timerDisplay.text(mins + ':' + (secs < 10 ? '0' : '') + secs);
+            }, 1000);
+
+            // Gönderme butonu
+            $('#submitExam').click(function () {
+                if (confirm('Sınavı tamamlamak istediğinize emin misiniz?')) {
+                    clearInterval(timerInterval);
+                    submitExam();
+                }
+            });
+
+            function submitExam() {
+                let examId = $('.exam-container').data('exam-id');
+                let answers = [];
+                // Form verilerini topla
+                $('input[name^="answers"]:checked').each(function() {
+                    let name = $(this).attr('name'); // answers[0].SelectedOptionId
+                    let index = name.match(/\d+/)[0]; // köşeli parantez içindeki index
+                    let questionId = $(`input[name="answers[${index}].QuestionId"]`).val();
+                    answers.push({
+                        QuestionId: parseInt(questionId),
+                        SelectedOptionId: parseInt($(this).val())
+                    });
+                });
+
+                let submitData = {
+                    ExamId: examId,
+                    Answers: answers
+                };
+
+                $.ajax({
+                    url: 'http://localhost:5043/api/Result/Submit',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(submitData),
+                    success: function (response) {
+                        alert(response.message);
+                        window.location.href = '/Student/Exams';
+                    },
+                    error: function (xhr) {
+                        let msg = 'Bir hata oluştu.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            msg = xhr.responseJSON.message;
+                        }
+                        alert(msg);
+                    }
+                });
+            }
+        });
+    </script>
+}
