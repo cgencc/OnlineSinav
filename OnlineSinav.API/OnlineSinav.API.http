@@ -1,0 +1,6 @@
+@OnlineSinav.API_HostAddress = http://localhost:5043
+
+GET {{OnlineSinav.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
