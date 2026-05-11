@@ -23,12 +23,10 @@ namespace OnlineSinav.MVC.Controllers
         [Authorize]
         public IActionResult Profile()
         {
-            // Kullanýcý bilgilerini token claim'lerinden al
-            ViewBag.UserName = User.FindFirstValue(System.Security.Claims.ClaimTypes.Name) ?? "Bilinmiyor";
+            ViewBag.UserName = User.FindFirstValue(ClaimTypes.Name) ?? "Bilinmiyor";
             ViewBag.FullName = User.FindFirstValue("UserFullName") ?? "Bilinmiyor";
             ViewBag.StudentNumber = User.FindFirstValue("StudentNumber") ?? "-";
-            ViewBag.Email = User.FindFirstValue(System.Security.Claims.ClaimTypes.Email) ?? "Bilinmiyor";
-
+            ViewBag.Email = User.FindFirstValue(ClaimTypes.Email) ?? "Bilinmiyor";
             return View();
         }
 

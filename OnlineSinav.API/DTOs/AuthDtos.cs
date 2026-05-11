@@ -2,6 +2,8 @@
 
 namespace OnlineSinav.API.DTOs
 {
+    using System.ComponentModel.DataAnnotations;
+
     public class UserRegisterDto
     {
         [Required(ErrorMessage = "Ad soyad zorunludur.")]
@@ -16,8 +18,8 @@ namespace OnlineSinav.API.DTOs
         [Required(ErrorMessage = "Şifre zorunludur."), MinLength(6)]
         public string Password { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Öğrenci numarası zorunludur.")]      // ← artık zorunlu
-        public string StudentNumber { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Öğrenci numarası zorunludur.")]
+        public string StudentNumber { get; set; } = string.Empty;   // artık zorunlu
     }
 
     public class UserLoginDto

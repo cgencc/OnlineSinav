@@ -98,22 +98,7 @@ namespace OnlineSinav.MVC.Controllers
 
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
         }
-        [Authorize(Roles = "Teacher")]
-        [HttpGet("GetUsers")]
-        public async Task<IActionResult> GetUsers()
-        {
-            var users = await _userManager.Users.Select(u => new
-            {
-                u.Id,
-                u.UserName,
-                u.FullName,
-                u.Email,
-                u.StudentNumber,
-                Rol = _userManager.GetRolesAsync(u).Result.FirstOrDefault() ?? "Student"
-            }).ToListAsync();
 
-            return Ok(new ResultDto { Status = true, Data = users });
-        }
 
     }
 }

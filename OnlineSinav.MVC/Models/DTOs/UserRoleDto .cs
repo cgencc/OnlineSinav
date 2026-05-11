@@ -1,4 +1,7 @@
-﻿public class UserRoleDto
+﻿namespace OnlineSinav.MVC.Models.DTOs
 {
-    public string UserName { get; set; } = string.Empty;
+    public class UserRoleDto
+    {
+        public string UserName { get; set; } = string.Empty;
+    }
 }

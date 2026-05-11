@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using OnlineSinav.API.DTOs;
 using OnlineSinav.API.Models;
 using OnlineSinav.API.Services;
@@ -87,6 +88,22 @@ namespace OnlineSinav.API.Controllers
             }
 
             return BadRequest(new ResultDto { Status = false, Message = "Yetki alınırken bir sorun oluştu." });
+        }
+        [Authorize(Roles = "Teacher")]
+        [HttpGet("GetUsers")]
+        public async Task<IActionResult> GetUsers()
+        {
+            var users = await _userManager.Users.Select(u => new
+            {
+                id = u.Id,
+                userName = u.UserName,
+                fullName = u.FullName,
+                email = u.Email,
+                studentNumber = u.StudentNumber ?? "",
+                rol = _userManager.GetRolesAsync(u).Result.FirstOrDefault() ?? "Student"
+            }).ToListAsync();
+
+            return Ok(new ResultDto { Status = true, Data = users });
         }
     }
 }

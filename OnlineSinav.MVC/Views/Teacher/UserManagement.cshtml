@@ -25,13 +25,13 @@
                             var roleBtn = u.rol === 'Teacher'
                                 ? `<button class="btn btn-sm btn-warning revoke-btn" data-username="${u.userName}">Yetkiyi Al</button>`
                                 : `<button class="btn btn-sm btn-success make-btn" data-username="${u.userName}">Öğretmen Yap</button>`;
-                            rows += `<tr>
-                                <td>${u.userName}</td>
-                                <td>${u.fullName}</td>
-                                <td>${u.studentNumber || '-'}</td>
-                                <td><span class="badge ${u.rol==='Teacher'?'bg-primary':'bg-secondary'}">${u.rol}</span></td>
-                                <td>${roleBtn}</td>
-                            </tr>`;
+                        rows += `<tr>
+                            <td>${u.userName}</td>
+                            <td>${u.fullName}</td>
+                            <td>${u.studentNumber || '-'}</td>
+                            <td><span class="badge ${u.rol==='Teacher'?'bg-primary':'bg-secondary'}">${u.rol}</span></td>
+                            <td>${roleBtn}</td>
+                        </tr>`;
                         });
                     } else {
                         rows = '<tr><td colspan="5" class="text-center text-muted">Kullanıcı bulunamadı.</td></tr>';

@@ -42,6 +42,12 @@ namespace OnlineSinav.MVC.Controllers
             var result = await _api.GetAsync<ResultDto>("Auth/GetProfile");
             return View(result?.Data);
         }
+        [HttpPost]
+        public async Task<IActionResult> SubmitExam([FromBody] ExamSubmitDto model)
+        {
+            var result = await _api.PostAsync<ResultDto>("Result/Submit", model);
+            return Json(result);
+        }
 
     }
 }
