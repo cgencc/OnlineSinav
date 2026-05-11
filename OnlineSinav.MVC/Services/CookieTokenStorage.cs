@@ -20,8 +20,8 @@ namespace OnlineSinav.MVC.Services
             var options = new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
+                Secure = false,                     // ← HTTP için false
+                SameSite = SameSiteMode.Lax,        // ← Strict yerine Lax
                 Expires = DateTime.Now.AddHours(3)
             };
             _httpContextAccessor.HttpContext?.Response.Cookies.Append(CookieName, token, options);

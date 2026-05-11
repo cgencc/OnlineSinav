@@ -4,24 +4,26 @@
 }
 
 <div class="row justify-content-center">
-    <div class="col-md-4">
-        <h2 class="mb-4">Giriş Yap</h2>
-        <form asp-action="Login" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="mb-3">
-                <label asp-for="UserName" class="form-label"></label>
-                <input asp-for="UserName" class="form-control" placeholder="Kullanıcı adı" />
-                <span asp-validation-for="UserName" class="text-danger"></span>
+    <div class="col-md-5 col-lg-4">
+        <div class="auth-container">
+            <h2 class="auth-title mb-4"><i class="fas fa-lock me-2"></i>Giriş Yap</h2>
+            <form asp-action="Login" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <div class="mb-3">
+                    <label class="form-label"><i class="fas fa-user me-1"></i>Kullanıcı Adı</label>
+                    <input asp-for="UserName" class="form-control" placeholder="Kullanıcı adı" />
+                    <span asp-validation-for="UserName" class="text-danger"></span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label"><i class="fas fa-key me-1"></i>Şifre</label>
+                    <input asp-for="Password" class="form-control" type="password" placeholder="Şifre" />
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 py-2">Giriş Yap</button>
+            </form>
+            <div class="mt-3 text-center">
+                <a asp-action="Register">Hesabın yok mu? <strong>Kaydol</strong></a>
             </div>
-            <div class="mb-3">
-                <label asp-for="Password" class="form-label"></label>
-                <input asp-for="Password" class="form-control" type="password" placeholder="Şifre" />
-                <span asp-validation-for="Password" class="text-danger"></span>
-            </div>
-            <button type="submit" class="btn btn-primary w-100">Giriş Yap</button>
-        </form>
-        <div class="mt-3 text-center">
-            <a asp-action="Register">Hesabın yok mu? Kaydol</a>
         </div>
     </div>
 </div>

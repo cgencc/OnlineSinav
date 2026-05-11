@@ -33,6 +33,8 @@ namespace OnlineSinav.MVC.Controllers
 
             var result = await _apiService.PostAsync<ResultDto>("Auth/Login", model);
 
+            System.Diagnostics.Debug.WriteLine("Result: " + (result != null ? result.Status.ToString() : "null"));
+
             if (result != null && result.Status)
             {
                 var token = result.Data?.ToString();

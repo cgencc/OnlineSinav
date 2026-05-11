@@ -12,4 +12,5 @@ namespace OnlineSinav.MVC.Controllers
         public IActionResult Questions(int examId) => View(model: examId);
         public IActionResult Results(int examId) => View(model: examId);
     }
+
 }
