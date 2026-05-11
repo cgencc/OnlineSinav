@@ -1,73 +1,73 @@
-﻿using System;
-using System.Net.Http;
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 
 namespace OnlineSinav.MVC.Services
 {
     public class ApiService
     {
-        private readonly HttpClient _client;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly ITokenStorage _tokenStorage;
+        private readonly string _baseUrl;
 
-        public ApiService(IConfiguration configuration, ITokenStorage tokenStorage)
+        public ApiService(IConfiguration configuration, ITokenStorage tokenStorage, IHttpClientFactory httpClientFactory)
         {
             _tokenStorage = tokenStorage;
-            _client = new HttpClient
-            {
-                BaseAddress = new Uri(configuration["ApiSettings:BaseUrl"])
-            };
-            _client.DefaultRequestHeaders.Accept.Clear();
-            _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            _httpClientFactory = httpClientFactory;
+            _baseUrl = configuration["ApiSettings:BaseUrl"]!;
         }
 
-        private void AddTokenToHeader()
+        // Her istek için token'lı, redirect'te auth header'ı koruyacak şekilde fresh client al
+        private HttpClient CreateClient()
         {
+            var client = _httpClientFactory.CreateClient("API");
+            client.BaseAddress = new Uri(_baseUrl);
+            client.DefaultRequestHeaders.Accept.Clear();
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
             var token = _tokenStorage.GetToken();
             if (!string.IsNullOrEmpty(token))
-            {
-                _client.DefaultRequestHeaders.Authorization =
-                    new AuthenticationHeaderValue("Bearer", token);
-            }
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            return client;
         }
 
         public async Task<T?> GetAsync<T>(string url)
         {
-            AddTokenToHeader();
-            var response = await _client.GetAsync(url);
-            var json = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<T>(json);
+            var client = CreateClient();
+            var response = await client.GetAsync(url);
+            return JsonConvert.DeserializeObject<T>(await response.Content.ReadAsStringAsync());
         }
 
-        public async Task<T?> PostAsync<T>(string url, object data)
+        public async Task<string> GetRawAsync(string url)
         {
-            AddTokenToHeader();
-            var jsonData = JsonConvert.SerializeObject(data);
-            var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
-            var response = await _client.PostAsync(url, content);
-            var json = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<T>(json);
+            var client = CreateClient();
+            var response = await client.GetAsync(url);
+            return await response.Content.ReadAsStringAsync();
+        }
+
+        public async Task<T?> PostAsync<T>(string url, object? data)
+        {
+            var client = CreateClient();
+            var body = data != null ? JsonConvert.SerializeObject(data) : "{}";
+            var content = new StringContent(body, Encoding.UTF8, "application/json");
+            var response = await client.PostAsync(url, content);
+            return JsonConvert.DeserializeObject<T>(await response.Content.ReadAsStringAsync());
         }
 
         public async Task<T?> PutAsync<T>(string url, object data)
         {
-            AddTokenToHeader();
-            var jsonData = JsonConvert.SerializeObject(data);
-            var content = new StringContent(jsonData, Encoding.UTF8, "application/json");
-            var response = await _client.PutAsync(url, content);
-            var json = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<T>(json);
+            var client = CreateClient();
+            var content = new StringContent(JsonConvert.SerializeObject(data), Encoding.UTF8, "application/json");
+            var response = await client.PutAsync(url, content);
+            return JsonConvert.DeserializeObject<T>(await response.Content.ReadAsStringAsync());
         }
 
         public async Task<T?> DeleteAsync<T>(string url)
         {
-            AddTokenToHeader();
-            var response = await _client.DeleteAsync(url);
-            var json = await response.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<T>(json);
+            var client = CreateClient();
+            var response = await client.DeleteAsync(url);
+            return JsonConvert.DeserializeObject<T>(await response.Content.ReadAsStringAsync());
         }
     }
 }

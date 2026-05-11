@@ -1,88 +1,202 @@
-﻿@model int  
+﻿@model int
 @* ExamId *@
 @{
     ViewData["Title"] = "Soruları Yönet";
 }
 
-<h2>Sınav ID: @Model - Soru Ekle</h2>
-<form id="questionForm">
-    <div class="mb-3">
-        <label class="form-label">Soru Metni</label>
-        <textarea id="QuestionText" class="form-control" required></textarea>
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Puan</label>
-        <input id="Points" type="number" class="form-control" value="10" min="1" />
-    </div>
-    <button type="submit" class="btn btn-primary">Soruyu Ekle</button>
-</form>
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h2 class="mb-0"><i class="fas fa-question-circle me-2"></i>Soru Ekle</h2>
+    <a href="/Teacher/Index" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i>Geri</a>
+</div>
 
-<hr />
-<h3>Şık Ekle (en son eklenen soruya)</h3>
-<div class="alert alert-info">Önce bir soru ekleyin, ardından o sorunun ID'sini alıp şık ekleyebilirsiniz.</div>
-<form id="optionForm">
-    <div class="mb-3">
-        <label class="form-label">Soru ID</label>
-        <input id="ExamQuestionId" type="number" class="form-control" required />
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Şık Metni</label>
-        <input id="OptionText" class="form-control" required />
-    </div>
-    <div class="form-check mb-3">
-        <input class="form-check-input" type="checkbox" id="IsCorrect" />
-        <label class="form-check-label">Doğru Cevap</label>
-    </div>
-    <button type="submit" class="btn btn-info">Şık Ekle</button>
-</form>
+<div id="alertBox"></div>
 
-<a href="/Teacher/Index" class="btn btn-secondary mt-3">Geri</a>
+{{-- Eklenen soruların listesi --}}
+<div id="addedQuestions" class="mb-4"></div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white fw-bold">
+        <i class="fas fa-plus-circle me-1"></i> Yeni Soru
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <label class="form-label fw-semibold">Soru Metni</label>
+            <textarea id="QuestionText" class="form-control" rows="3" placeholder="Soruyu buraya yazın..." required></textarea>
+        </div>
+        <div class="mb-3 col-md-3">
+            <label class="form-label fw-semibold">Puan</label>
+            <input id="Points" type="number" class="form-control" value="10" min="1" />
+        </div>
+
+        <hr />
+        <h6 class="fw-bold mb-3"><i class="fas fa-list me-1"></i>Şıklar</h6>
+        <div id="optionsList"></div>
+
+        <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="addOptionBtn">
+            <i class="fas fa-plus me-1"></i>Şık Ekle
+        </button>
+
+        <div class="d-grid mt-2">
+            <button type="button" class="btn btn-success btn-lg" id="saveQuestionBtn">
+                <i class="fas fa-save me-1"></i>Soruyu Kaydet
+            </button>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>
-        $(function() {
-            $('#questionForm').submit(function(e) {
-                e.preventDefault();
-                let data = {
-                    examId: @Model,
-                    questionText: $('#QuestionText').val(),
-                    points: parseInt($('#Points').val())
-                };
+        var examId = @Model;
+        var optionCount = 0;
+        var questionCount = 0;
+
+        function showAlert(msg, type) {
+            $('#alertBox').html(`<div class="alert alert-${type} alert-dismissible fade show"><i class="fas fa-${type==='success'?'check-circle':'exclamation-triangle'} me-2"></i>${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`);
+            $('html, body').animate({ scrollTop: 0 }, 300);
+        }
+
+        function addOptionRow(text, isCorrect) {
+            optionCount++;
+            var idx = optionCount;
+            var row = `
+            <div class="input-group mb-2" id="optRow_${idx}">
+                <div class="input-group-text">
+                    <input class="form-check-input mt-0 correct-radio" type="radio" name="correctOption" value="${idx}" title="Doğru cevap" ${isCorrect ? 'checked' : ''} />
+                </div>
+                <input type="text" class="form-control option-text" placeholder="Şık metni" value="${text || ''}" />
+                <button class="btn btn-outline-danger" type="button" onclick="$('#optRow_${idx}').remove()">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>`;
+            $('#optionsList').append(row);
+        }
+
+        // Start with 4 empty options
+        $(function () {
+            addOptionRow('', false);
+            addOptionRow('', false);
+            addOptionRow('', false);
+            addOptionRow('', false);
+            // Mark first as correct by default
+            $('input[name="correctOption"]').first().prop('checked', true);
+
+            $('#addOptionBtn').click(function () {
+                addOptionRow('', false);
+            });
+
+            $('#saveQuestionBtn').click(function () {
+                var questionText = $('#QuestionText').val().trim();
+                if (!questionText) {
+                    showAlert('Soru metni boş bırakılamaz.', 'danger');
+                    return;
+                }
+
+                var options = [];
+                var correctIdx = $('input[name="correctOption"]:checked').val();
+                var hasCorrect = false;
+                var valid = true;
+
+                $('#optionsList .input-group').each(function (i) {
+                    var rowId = $(this).attr('id').replace('optRow_', '');
+                    var text = $(this).find('.option-text').val().trim();
+                    if (!text) {
+                        valid = false;
+                        return false; // break
+                    }
+                    var isCorrect = (rowId === correctIdx);
+                    if (isCorrect) hasCorrect = true;
+                    options.push({ text: text, isCorrect: isCorrect });
+                });
+
+                if (!valid) {
+                    showAlert('Tüm şık metinlerini doldurun.', 'danger');
+                    return;
+                }
+                if (options.length < 2) {
+                    showAlert('En az 2 şık ekleyin.', 'danger');
+                    return;
+                }
+                if (!hasCorrect) {
+                    showAlert('Doğru cevabı işaretleyin (soldaki radyo butonu).', 'danger');
+                    return;
+                }
+
+                var $btn = $('#saveQuestionBtn').prop('disabled', true).text('Kaydediliyor...');
+
+                // Step 1: Add the question
                 $.ajax({
                     url: '/Teacher/AddQuestion',
                     type: 'POST',
                     contentType: 'application/json',
-                    data: JSON.stringify(data),
-                    success: function(res) {
-                        alert(res.message);
-                        $('#QuestionText').val('');
-                    },
-                    error: function(xhr) {
-                        alert('Hata: ' + (xhr.responseJSON?.message || 'Eklenemedi'));
-                    }
-                });
-            });
+                    data: JSON.stringify({
+                        examId: examId,
+                        questionText: questionText,
+                        points: parseInt($('#Points').val()) || 10
+                    }),
+                    success: function (res) {
+                        if (!res.status) {
+                            showAlert('Soru eklenemedi: ' + res.message, 'danger');
+                            $btn.prop('disabled', false).html('<i class="fas fa-save me-1"></i>Soruyu Kaydet');
+                            return;
+                        }
 
-            $('#optionForm').submit(function(e) {
-                e.preventDefault();
-                let data = {
-                    examQuestionId: parseInt($('#ExamQuestionId').val()),
-                    optionText: $('#OptionText').val(),
-                    isCorrect: $('#IsCorrect').is(':checked')
-                };
-                $.ajax({
-                    url: '/Teacher/AddOption',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(data),
-                    success: function(res) {
-                        alert(res.message);
-                        $('#OptionText').val('');
-                        $('#IsCorrect').prop('checked', false);
+                        var newQuestionId = res.data;
+
+                        // Step 2: Add all options sequentially
+                        var promises = options.map(function (opt) {
+                            return $.ajax({
+                                url: '/Teacher/AddOption',
+                                type: 'POST',
+                                contentType: 'application/json',
+                                data: JSON.stringify({
+                                    examQuestionId: newQuestionId,
+                                    optionText: opt.text,
+                                    isCorrect: opt.isCorrect
+                                })
+                            });
+                        });
+
+                        $.when.apply($, promises).then(function () {
+                            questionCount++;
+                            // Show the added question in the list above
+                            var optHtml = options.map(function (o, i) {
+                                return `<li class="${o.isCorrect ? 'text-success fw-bold' : ''}">${o.isCorrect ? '✓ ' : ''}${o.text}</li>`;
+                            }).join('');
+
+                            var card = `
+                            <div class="card mb-2 border-success">
+                                <div class="card-body py-2">
+                                    <div class="d-flex justify-content-between">
+                                        <strong><i class="fas fa-check-circle text-success me-1"></i>Soru ${questionCount}: ${questionText}</strong>
+                                        <small class="text-muted">${$('#Points').val()} puan</small>
+                                    </div>
+                                    <ul class="mb-0 mt-1 small">${optHtml}</ul>
+                                </div>
+                            </div>`;
+                            $('#addedQuestions').append(card);
+
+                            // Reset form
+                            $('#QuestionText').val('');
+                            $('#Points').val(10);
+                            $('#optionsList').empty();
+                            optionCount = 0;
+                            addOptionRow('', false);
+                            addOptionRow('', false);
+                            addOptionRow('', false);
+                            addOptionRow('', false);
+                            $('input[name="correctOption"]').first().prop('checked', true);
+
+                            showAlert(`Soru ve ${options.length} şık başarıyla eklendi!`, 'success');
+                            $btn.prop('disabled', false).html('<i class="fas fa-save me-1"></i>Soruyu Kaydet');
+                        }, function () {
+                            showAlert('Şıklar eklenirken hata oluştu.', 'danger');
+                            $btn.prop('disabled', false).html('<i class="fas fa-save me-1"></i>Soruyu Kaydet');
+                        });
                     },
-                    error: function(xhr) {
-                        alert('Hata: ' + (xhr.responseJSON?.message || 'Eklenemedi'));
+                    error: function (xhr) {
+                        showAlert('Hata: ' + (xhr.responseJSON?.message || 'Soru eklenemedi'), 'danger');
+                        $btn.prop('disabled', false).html('<i class="fas fa-save me-1"></i>Soruyu Kaydet');
                     }
                 });
             });

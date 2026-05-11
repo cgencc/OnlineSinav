@@ -4,57 +4,110 @@
 
 <h2 class="mb-4"><i class="fas fa-users-cog me-2"></i>Kullanıcı Yönetimi</h2>
 
+<div id="alertBox"></div>
+
 <table class="table table-striped table-hover shadow-sm" id="usersTable">
     <thead class="table-dark">
-        <tr><th>Kullanıcı Adı</th><th>Ad Soyad</th><th>Öğrenci No</th><th>Rol</th><th>İşlem</th></tr>
+        <tr>
+            <th>Kullanıcı Adı</th>
+            <th>Ad Soyad</th>
+            <th>Öğrenci No</th>
+            <th>Rol</th>
+            <th>İşlem</th>
+        </tr>
     </thead>
     <tbody>
-        <!-- AJAX ile doldurulacak -->
+        <tr><td colspan="5" class="text-center text-muted">Yükleniyor...</td></tr>
     </tbody>
 </table>
 
 @section Scripts {
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>
-        $(function(){
+        $(function () {
+
+            function showAlert(msg, type) {
+                $('#alertBox').html(`<div class="alert alert-${type} alert-dismissible fade show">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`);
+            }
+
             function loadUsers() {
-                $.get('/Teacher/GetUsers', function(res) {
-                    var rows = '';
-                    if (res.status && res.data) {
-                        $.each(res.data, function(i, u){
-                            var roleBtn = u.rol === 'Teacher'
-                                ? `<button class="btn btn-sm btn-warning revoke-btn" data-username="${u.userName}">Yetkiyi Al</button>`
-                                : `<button class="btn btn-sm btn-success make-btn" data-username="${u.userName}">Öğretmen Yap</button>`;
-                        rows += `<tr>
-                            <td>${u.userName}</td>
-                            <td>${u.fullName}</td>
-                            <td>${u.studentNumber || '-'}</td>
-                            <td><span class="badge ${u.rol==='Teacher'?'bg-primary':'bg-secondary'}">${u.rol}</span></td>
-                            <td>${roleBtn}</td>
-                        </tr>`;
-                        });
-                    } else {
-                        rows = '<tr><td colspan="5" class="text-center text-muted">Kullanıcı bulunamadı.</td></tr>';
+                $.ajax({
+                    url: '/Teacher/GetUsers',
+                    type: 'GET',
+                    success: function (res) {
+                        var rows = '';
+                        // ResultDto wrapper: { status, message, data: [...] }
+                        var users = (res && res.status !== undefined) ? res.data : (Array.isArray(res) ? res : null);
+
+                        if (users && users.length > 0) {
+                            $.each(users, function (i, u) {
+                                // Support both camelCase and PascalCase (ASP.NET may return either)
+                                var userName      = u.userName      ?? u.UserName      ?? '';
+                                var fullName      = u.fullName      ?? u.FullName      ?? '';
+                                var studentNumber = u.studentNumber ?? u.StudentNumber ?? '-';
+                                var rol           = u.rol           ?? u.Rol           ?? u.role ?? u.Role ?? 'Student';
+
+                                var badgeClass = rol === 'Teacher' ? 'bg-primary' : 'bg-secondary';
+                                var roleLabel  = rol === 'Teacher' ? 'Öğretmen' : 'Öğrenci';
+                                var roleBtn    = rol === 'Teacher'
+                                    ? `<button class="btn btn-sm btn-warning revoke-btn" data-username="${userName}">Yetkiyi Al</button>`
+                                    : `<button class="btn btn-sm btn-success make-btn"   data-username="${userName}">Öğretmen Yap</button>`;
+
+                                rows += `<tr>
+                                    <td>${userName}</td>
+                                    <td>${fullName}</td>
+                                    <td>${studentNumber}</td>
+                                    <td><span class="badge ${badgeClass}">${roleLabel}</span></td>
+                                    <td>${roleBtn}</td>
+                                </tr>`;
+                            });
+                        } else {
+                            rows = '<tr><td colspan="5" class="text-center text-muted">Kullanıcı bulunamadı.</td></tr>';
+                        }
+                        $('#usersTable tbody').html(rows);
+                    },
+                    error: function () {
+                        $('#usersTable tbody').html('<tr><td colspan="5" class="text-danger text-center">Kullanıcılar yüklenemedi.</td></tr>');
                     }
-                    $('#usersTable tbody').html(rows);
                 });
             }
+
             loadUsers();
 
-            $(document).on('click', '.make-btn', function(){
+            $(document).on('click', '.make-btn', function () {
                 var uname = $(this).data('username');
-                $.post('/Teacher/MakeTeacher', JSON.stringify({ userName: uname }), function(res){
-                    alert(res.message);
-                    loadUsers();
-                }, 'json');
+                if (!confirm(`"${uname}" kullanıcısını öğretmen yapmak istiyor musunuz?`)) return;
+                $.ajax({
+                    url: '/Teacher/MakeTeacher',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ userName: uname }),
+                    success: function (res) {
+                        showAlert(res.message, res.status ? 'success' : 'danger');
+                        loadUsers();
+                    },
+                    error: function (xhr) {
+                        showAlert('Hata: ' + (xhr.responseJSON?.message || 'İşlem başarısız'), 'danger');
+                    }
+                });
             });
 
-            $(document).on('click', '.revoke-btn', function(){
+            $(document).on('click', '.revoke-btn', function () {
                 var uname = $(this).data('username');
-                $.post('/Teacher/RevokeTeacher', JSON.stringify({ userName: uname }), function(res){
-                    alert(res.message);
-                    loadUsers();
-                }, 'json');
+                if (!confirm(`"${uname}" kullanıcısının öğretmen yetkisini almak istiyor musunuz?`)) return;
+                $.ajax({
+                    url: '/Teacher/RevokeTeacher',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ userName: uname }),
+                    success: function (res) {
+                        showAlert(res.message, res.status ? 'success' : 'danger');
+                        loadUsers();
+                    },
+                    error: function (xhr) {
+                        showAlert('Hata: ' + (xhr.responseJSON?.message || 'İşlem başarısız'), 'danger');
+                    }
+                });
             });
         });
     </script>

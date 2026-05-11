@@ -19,25 +19,21 @@ namespace OnlineSinav.API.Controllers
             _examRepo = examRepo;
         }
 
-
         [HttpGet]
         public async Task<IActionResult> GetAll(string? search = null)
         {
             var query = _examRepo.AsQueryable().Where(e => e.IsActive);
-
-            // Eğer dışarıdan bir arama kelimesi (search) gelirse başlıkta ara
             if (!string.IsNullOrEmpty(search))
                 query = query.Where(e => e.Title.ToLower().Contains(search.ToLower()));
 
-            var exams = await query
-                .Select(e => new ExamListDto
-                {
-                    Id = e.Id,
-                    Title = e.Title,
-                    DurationInMinutes = e.DurationInMinutes,
-                    CreatedDate = e.CreatedDate,
-                    QuestionCount = e.Questions!.Count
-                }).ToListAsync();
+            var exams = await query.Select(e => new ExamListDto
+            {
+                Id = e.Id,
+                Title = e.Title,
+                DurationInMinutes = e.DurationInMinutes,
+                CreatedDate = e.CreatedDate,
+                QuestionCount = e.Questions!.Count
+            }).ToListAsync();
 
             return Ok(exams);
         }
@@ -46,29 +42,24 @@ namespace OnlineSinav.API.Controllers
         public async Task<IActionResult> GetById(int id)
         {
             var exam = await _examRepo.AsQueryable()
-                .Include(e => e.Questions!)
-                    .ThenInclude(q => q.Options)
+                .Include(e => e.Questions!).ThenInclude(q => q.Options)
                 .FirstOrDefaultAsync(e => e.Id == id && e.IsActive);
 
-            if (exam == null) return NotFound(new ResultDto { Status = false, Message = "Sınav bulunamadı." });
+            if (exam == null)
+                return NotFound(new ResultDto { Status = false, Message = "Sınav bulunamadı." });
 
             var safeExamData = new
             {
-                Id = exam.Id,
-                Title = exam.Title,
-                Description = exam.Description,
-                DurationInMinutes = exam.DurationInMinutes,
-                Questions = exam.Questions!.Select(q => new
+                id = exam.Id,
+                title = exam.Title,
+                description = exam.Description,
+                durationInMinutes = exam.DurationInMinutes,
+                questions = exam.Questions!.Select(q => new
                 {
-                    Id = q.Id,
-                    QuestionText = q.QuestionText,
-                    Points = q.Points,
-                    Options = q.Options!.Select(o => new
-                    {
-                        Id = o.Id,
-                        OptionText = o.OptionText
-
-                    })
+                    id = q.Id,
+                    questionText = q.QuestionText,
+                    points = q.Points,
+                    options = q.Options!.Select(o => new { id = o.Id, optionText = o.OptionText })
                 })
             };
 
@@ -92,12 +83,13 @@ namespace OnlineSinav.API.Controllers
 
             await _examRepo.AddAsync(exam);
             await _examRepo.SaveAsync();
-            return Ok(new ResultDto { Status = true, Message = "Sınav oluşturuldu." });
+            return Ok(new ResultDto { Status = true, Message = "Sınav oluşturuldu.", Data = exam.Id });
         }
 
         [Authorize(Roles = "Teacher")]
         [HttpPost("AddQuestion")]
-        public async Task<IActionResult> AddQuestion(QuestionAddDto model, [FromServices] IGenericRepository<ExamQuestion> questionRepo)
+        public async Task<IActionResult> AddQuestion(QuestionAddDto model,
+            [FromServices] IGenericRepository<ExamQuestion> questionRepo)
         {
             var question = new ExamQuestion
             {
@@ -110,18 +102,20 @@ namespace OnlineSinav.API.Controllers
 
             await questionRepo.AddAsync(question);
             await questionRepo.SaveAsync();
-            return Ok(new ResultDto { Status = true, Message = "Soru eklendi." });
+            // Return the new ID so the client can immediately add options to it
+            return Ok(new ResultDto { Status = true, Message = "Soru eklendi.", Data = question.Id });
         }
 
         [Authorize(Roles = "Teacher")]
         [HttpPost("AddOption")]
-        public async Task<IActionResult> AddOption(OptionAddDto model, [FromServices] IGenericRepository<QuestionOption> optionRepo)
+        public async Task<IActionResult> AddOption(OptionAddDto model,
+            [FromServices] IGenericRepository<QuestionOption> optionRepo)
         {
             var option = new QuestionOption
             {
                 ExamQuestionId = model.ExamQuestionId,
                 OptionText = model.OptionText,
-                IsCorrect = model.IsCorrect, 
+                IsCorrect = model.IsCorrect,
                 CreatedDate = DateTime.Now,
                 IsActive = true
             };
@@ -136,7 +130,8 @@ namespace OnlineSinav.API.Controllers
         public async Task<IActionResult> Update(ExamUpdateDto model)
         {
             var exam = await _examRepo.GetByIdAsync(model.Id);
-            if (exam == null) return NotFound(new ResultDto { Status = false, Message = "Güncellenecek sınav bulunamadı." });
+            if (exam == null)
+                return NotFound(new ResultDto { Status = false, Message = "Güncellenecek sınav bulunamadı." });
 
             exam.Title = model.Title;
             exam.Description = model.Description;
@@ -153,9 +148,10 @@ namespace OnlineSinav.API.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var exam = await _examRepo.GetByIdAsync(id);
-            if (exam == null) return NotFound(new ResultDto { Status = false, Message = "Silinecek sınav bulunamadı." });
+            if (exam == null)
+                return NotFound(new ResultDto { Status = false, Message = "Silinecek sınav bulunamadı." });
 
-            exam.IsActive = false; 
+            exam.IsActive = false;
             _examRepo.Update(exam);
             await _examRepo.SaveAsync();
             return Ok(new ResultDto { Status = true, Message = "Sınav pasif hale getirildi." });
