@@ -93,17 +93,27 @@ namespace OnlineSinav.API.Controllers
         [HttpGet("GetUsers")]
         public async Task<IActionResult> GetUsers()
         {
-            var users = await _userManager.Users.Select(u => new
-            {
-                id = u.Id,
-                userName = u.UserName,
-                fullName = u.FullName,
-                email = u.Email,
-                studentNumber = u.StudentNumber ?? "",
-                rol = _userManager.GetRolesAsync(u).Result.FirstOrDefault() ?? "Student"
-            }).ToListAsync();
+            // Tüm kullanıcıları al
+            var allUsers = await _userManager.Users.ToListAsync();
 
-            return Ok(new ResultDto { Status = true, Data = users });
+            var userList = new List<object>();
+            foreach (var u in allUsers)
+            {
+                var roles = await _userManager.GetRolesAsync(u);
+                var mainRole = roles.FirstOrDefault() ?? "Student";
+
+                userList.Add(new
+                {
+                    id = u.Id,
+                    userName = u.UserName,
+                    fullName = u.FullName,
+                    email = u.Email,
+                    studentNumber = u.StudentNumber ?? "",
+                    rol = mainRole
+                });
+            }
+
+            return Ok(new ResultDto { Status = true, Data = userList });
         }
     }
 }
