@@ -42,7 +42,8 @@ namespace OnlineSinav.API.Controllers
         public async Task<IActionResult> GetById(int id)
         {
             var exam = await _examRepo.AsQueryable()
-                .Include(e => e.Questions!).ThenInclude(q => q.Options)
+                // Include ederken sadece aktif soruları filtreleyebilirsiniz (EF Core 5.0+)
+                .Include(e => e.Questions!.Where(q => q.IsActive)).ThenInclude(q => q.Options)
                 .FirstOrDefaultAsync(e => e.Id == id && e.IsActive);
 
             if (exam == null)
@@ -54,7 +55,8 @@ namespace OnlineSinav.API.Controllers
                 title = exam.Title,
                 description = exam.Description,
                 durationInMinutes = exam.DurationInMinutes,
-                questions = exam.Questions!.Select(q => new
+                // ÇÖZÜM BURADA: Sadece IsActive özelliği true olan (silinmemiş) soruları seçiyoruz
+                questions = exam.Questions!.Where(q => q.IsActive).Select(q => new
                 {
                     id = q.Id,
                     questionText = q.QuestionText,
