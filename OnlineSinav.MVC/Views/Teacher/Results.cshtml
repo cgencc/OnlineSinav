@@ -16,7 +16,7 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>
         $(function() {
-            $.get(`http://localhost:5043/api/Result/Exam/@Model`, function(res) {
+            $.get(`/Teacher/GetExamResults/@Model`, function(res) {
                 if (res.status && res.data) {
                     let rows = '';
                     $.each(res.data, function(i, r) {

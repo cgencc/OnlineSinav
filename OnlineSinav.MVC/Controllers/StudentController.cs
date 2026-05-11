@@ -32,5 +32,16 @@ namespace OnlineSinav.MVC.Controllers
             // Daha önce girilmiş mi kontrolü: API'den alabiliriz ama şimdilik view tarafında hata gösteririz.
             return View(exam);
         }
+        public async Task<IActionResult> MyResults()
+        {
+            var results = await _api.GetAsync<ResultDto>("Result/MyResults");
+            return View(results?.Data);
+        }
+        public async Task<IActionResult> Profile()
+        {
+            var result = await _api.GetAsync<ResultDto>("Auth/GetProfile");
+            return View(result?.Data);
+        }
+
     }
 }

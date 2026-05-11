@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using OnlineSinav.MVC.Models.DTOs;
 using OnlineSinav.MVC.Services;
@@ -96,5 +98,22 @@ namespace OnlineSinav.MVC.Controllers
 
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
         }
+        [Authorize(Roles = "Teacher")]
+        [HttpGet("GetUsers")]
+        public async Task<IActionResult> GetUsers()
+        {
+            var users = await _userManager.Users.Select(u => new
+            {
+                u.Id,
+                u.UserName,
+                u.FullName,
+                u.Email,
+                u.StudentNumber,
+                Rol = _userManager.GetRolesAsync(u).Result.FirstOrDefault() ?? "Student"
+            }).ToListAsync();
+
+            return Ok(new ResultDto { Status = true, Data = users });
+        }
+
     }
 }

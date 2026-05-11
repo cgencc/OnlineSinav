@@ -50,7 +50,7 @@
                     points: parseInt($('#Points').val())
                 };
                 $.ajax({
-                    url: 'http://localhost:5043/api/Exam/AddQuestion',
+                    url: '/Teacher/AddQuestion',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify(data),
@@ -72,7 +72,7 @@
                     isCorrect: $('#IsCorrect').is(':checked')
                 };
                 $.ajax({
-                    url: 'http://localhost:5043/api/Exam/AddOption',
+                    url: '/Teacher/AddOption',
                     type: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify(data),

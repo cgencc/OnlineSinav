@@ -85,23 +85,23 @@
                     Answers: answers
                 };
 
-                $.ajax({
-                    url: 'http://localhost:5043/api/Result/Submit',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify(submitData),
-                    success: function (response) {
-                        alert(response.message);
-                        window.location.href = '/Student/Exams';
-                    },
-                    error: function (xhr) {
-                        let msg = 'Bir hata oluştu.';
-                        if (xhr.responseJSON && xhr.responseJSON.message) {
-                            msg = xhr.responseJSON.message;
-                        }
-                        alert(msg);
-                    }
-                });
+        $.ajax({
+            url: '/Student/SubmitExam',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(submitData),
+            success: function (response) {
+                alert(response.message);
+                window.location.href = '/Student/Exams';
+            },
+            error: function (xhr) {
+                let msg = 'Bir hata oluştu.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    msg = xhr.responseJSON.message;
+                }
+                alert(msg);
+            }
+        });
             }
         });
     </script>

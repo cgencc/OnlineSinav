@@ -4,11 +4,20 @@ namespace OnlineSinav.API.DTOs
 {
     public class UserRegisterDto
     {
-        [Required] public string FullName { get; set; } = string.Empty;
-        [Required] public string UserName { get; set; } = string.Empty;
-        [Required, EmailAddress] public string Email { get; set; } = string.Empty;
-        [Required, MinLength(6)] public string Password { get; set; } = string.Empty;
-        public string? StudentNumber { get; set; }
+        [Required(ErrorMessage = "Ad soyad zorunludur.")]
+        public string FullName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Kullanıcı adı zorunludur.")]
+        public string UserName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "E-posta zorunludur."), EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Şifre zorunludur."), MinLength(6)]
+        public string Password { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Öğrenci numarası zorunludur.")]      // ← artık zorunlu
+        public string StudentNumber { get; set; } = string.Empty;
     }
 
     public class UserLoginDto

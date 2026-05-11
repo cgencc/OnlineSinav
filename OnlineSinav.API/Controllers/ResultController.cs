@@ -101,5 +101,22 @@ namespace OnlineSinav.API.Controllers
 
             return Ok(new ResultDto { Status = true, Message = "Sınav sonuçları listelendi.", Data = results });
         }
+        [Authorize(Roles = "Student")]
+        [HttpGet("MyResults")]
+        public async Task<IActionResult> GetMyResults()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var results = await _resultRepo.AsQueryable()
+                .Include(r => r.Exam)
+                .Where(r => r.AppUserId == userId)
+                .Select(r => new
+                {
+                    ExamTitle = r.Exam!.Title,
+                    Score = r.Score,
+                    Date = r.CreatedDate
+                }).ToListAsync();
+
+            return Ok(new ResultDto { Status = true, Data = results });
+        }
     }
 }

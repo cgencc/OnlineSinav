@@ -1,0 +1,16 @@
+﻿@{
+    ViewData["Title"] = "Profilim";
+}
+
+<h2 class="mb-4"><i class="fas fa-user-circle me-2"></i>Profilim</h2>
+
+<div class="card shadow-sm col-md-6">
+    <div class="card-body">
+        <table class="table table-borderless">
+            <tr><th>Kullanıcı Adı</th><td>@ViewBag.UserName</td></tr>
+            <tr><th>Ad Soyad</th><td>@ViewBag.FullName</td></tr>
+            <tr><th>E-posta</th><td>@ViewBag.Email</td></tr>
+            <tr><th>Öğrenci No</th><td>@ViewBag.StudentNumber</td></tr>
+        </table>
+    </div>
+</div>

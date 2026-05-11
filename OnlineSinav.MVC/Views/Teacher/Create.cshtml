@@ -35,17 +35,16 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>
         $(function() {
-            // Düzenleme modunda veriyi doldur
             @if (isEdit)
             {
-                <text>
-                $.get(`http://localhost:5043/api/Exam/@Model`, function(data) {
-                    $('#Title').val(data.title);
-                    $('#Description').val(data.description);
-                    $('#DurationInMinutes').val(data.durationInMinutes);
-                    $('#IsActive').prop('checked', data.isActive);
-                });
-                </text>
+                    <text>
+                    $.get(`/Teacher/GetExam/@Model`, function(data) {
+                        $('#Title').val(data.title);
+                        $('#Description').val(data.description);
+                        $('#DurationInMinutes').val(data.durationInMinutes);
+                        $('#IsActive').prop('checked', data.isActive);
+                    });
+                    </text>
             }
 
             $('#examForm').submit(function(e) {
@@ -61,10 +60,10 @@
                 let url, type;
                 if (id) {
                     examData.id = parseInt(id);
-                    url = `http://localhost:5043/api/Exam/${id}`;
+                    url = '/Teacher/UpdateExam';
                     type = 'PUT';
                 } else {
-                    url = 'http://localhost:5043/api/Exam';
+                    url = '/Teacher/CreateExam';
                     type = 'POST';
                 }
 
@@ -73,8 +72,13 @@
                     type: type,
                     contentType: 'application/json',
                     data: JSON.stringify(examData),
-                    success: function() {
-                        window.location.href = '/Teacher/Index';
+                    success: function(res) {
+                        if (res.status) {
+                            alert(res.message);
+                            window.location.href = '/Teacher/Index';
+                        } else {
+                            alert(res.message);
+                        }
                     },
                     error: function(xhr) {
                         alert('Hata: ' + (xhr.responseJSON?.message || 'İşlem başarısız'));

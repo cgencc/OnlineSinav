@@ -14,7 +14,7 @@
             loadExams();
 
             function loadExams() {
-                $.get('http://localhost:5043/api/Exam', function(data) {
+                $.get('/Teacher/GetExams', function(data) {
                     let html = '';
                     if (data && data.length > 0) {
                         $.each(data, function(i, exam) {
@@ -45,10 +45,15 @@
                 let id = $(this).data('id');
                 if (confirm('Sınavı pasif yapmak istediğinize emin misiniz?')) {
                     $.ajax({
-                        url: `http://localhost:5043/api/Exam/${id}`,
+                        url: `/Teacher/DeleteExam/${id}`,
                         type: 'DELETE',
-                        success: function() {
-                            loadExams();
+                        success: function(res) {
+                            if (res && res.status) {
+                                alert(res.message);
+                                loadExams();
+                            } else {
+                                alert('Hata: ' + (res?.message || 'Silinemedi'));
+                            }
                         },
                         error: function(xhr) {
                             alert('Hata: ' + (xhr.responseJSON?.message || 'Silinemedi'));

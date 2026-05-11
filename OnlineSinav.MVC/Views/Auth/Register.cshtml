@@ -30,7 +30,7 @@
             </div>
             <div class="mb-3">
                 <label asp-for="StudentNumber" class="form-label"></label>
-                <input asp-for="StudentNumber" class="form-control" placeholder="Öğrenci no (opsiyonel)" />
+                <input asp-for="StudentNumber" class="form-control" placeholder="Öğrenci no (zorunlu)" required />
                 <span asp-validation-for="StudentNumber" class="text-danger"></span>
             </div>
             <button type="submit" class="btn btn-success w-100">Kaydol</button>

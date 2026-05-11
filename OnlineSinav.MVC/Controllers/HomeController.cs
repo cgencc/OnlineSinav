@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OnlineSinav.MVC.Models;
 using System.Diagnostics;
+using System.Security.Claims;
 
 namespace OnlineSinav.MVC.Controllers
 {
@@ -15,6 +17,18 @@ namespace OnlineSinav.MVC.Controllers
                 else if (User.IsInRole("Student"))
                     return RedirectToAction("Exams", "Student");
             }
+            return View();
+        }
+
+        [Authorize]
+        public IActionResult Profile()
+        {
+            // Kullanýcý bilgilerini token claim'lerinden al
+            ViewBag.UserName = User.FindFirstValue(System.Security.Claims.ClaimTypes.Name) ?? "Bilinmiyor";
+            ViewBag.FullName = User.FindFirstValue("UserFullName") ?? "Bilinmiyor";
+            ViewBag.StudentNumber = User.FindFirstValue("StudentNumber") ?? "-";
+            ViewBag.Email = User.FindFirstValue(System.Security.Claims.ClaimTypes.Email) ?? "Bilinmiyor";
+
             return View();
         }
 
