@@ -3,63 +3,100 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Online Sınav Portalı</title>
+    <title>@ViewData["Title"] - Sınav Portal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <!-- Font Awesome ikonlar -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="~/css/site.css" rel="stylesheet" />
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark sticky-top" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="/"><i class="fas fa-graduation-cap me-2"></i>Online Sınav</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto align-items-center">
-                    @if (User.Identity?.IsAuthenticated == true)
+    <div class="d-flex" id="wrapper">
+        <div class="sidebar shadow-sm" id="sidebar">
+            <div class="sidebar-heading text-center py-4 fw-bold fs-4 border-bottom border-secondary">
+                <i class="fas fa-graduation-cap text-primary me-2"></i>Sınav Portal
+            </div>
+            <div class="list-group list-group-flush my-3">
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    @if (User.IsInRole("Teacher"))
                     {
-                        @if (User.IsInRole("Teacher"))
-                        {
-                            <li class="nav-item"><a class="nav-link" href="/Teacher/Index"><i class="fas fa-tasks me-1"></i>Sınav Yönetimi</a></li>
-                            <li class="nav-item"><a class="nav-link" href="/Teacher/UserManagement"><i class="fas fa-users-cog me-1"></i>Kullanıcılar</a></li>
-                        }
-                        else
-                        {
-                            <li class="nav-item"><a class="nav-link" href="/Student/Exams"><i class="fas fa-pencil-alt me-1"></i>Sınavlarım</a></li>
-                            <li class="nav-item"><a class="nav-link" href="/Student/MyResults"><i class="fas fa-history me-1"></i> Geçmiş</a></li>
-                        }
-                        <li class="nav-item"><a class="nav-link text-white-50"><i class="fas fa-user-circle me-1"></i>@User.Identity.Name</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/Home/Profile"><i class="fas fa-user me-1"></i>Profilim</a></li>
-                        <li class="nav-item"><a class="nav-link btn btn-outline-light btn-sm ms-2 px-3" href="/Auth/Logout"><i class="fas fa-sign-out-alt me-1"></i>Çıkış</a></li>
+                        <a href="/Teacher/Index" class="list-group-item list-group-item-action bg-transparent text-white fw-semibold"><i class="fas fa-tasks me-3"></i>Sınav Yönetimi</a>
+                        <a href="/Teacher/UserManagement" class="list-group-item list-group-item-action bg-transparent text-white fw-semibold"><i class="fas fa-users-cog me-3"></i>Kullanıcılar</a>
                     }
                     else
                     {
-                        <li class="nav-item"><a class="nav-link" href="/Auth/Login"><i class="fas fa-sign-in-alt me-1"></i>Giriş Yap</a></li>
-                        <li class="nav-item"><a class="nav-link btn btn-primary btn-sm ms-2 px-3" href="/Auth/Register"><i class="fas fa-user-plus me-1"></i>Kaydol</a></li>
+                        <a href="/Student/Exams" class="list-group-item list-group-item-action bg-transparent text-white fw-semibold"><i class="fas fa-pencil-alt me-3"></i>Sınavlarım</a>
+                        <a href="/Student/MyResults" class="list-group-item list-group-item-action bg-transparent text-white fw-semibold"><i class="fas fa-history me-3"></i>Geçmiş</a>
                     }
-                </ul>
+                }
             </div>
         </div>
-    </nav>
 
-    <div class="container mt-4">
-        @if (TempData["SuccessMessage"] != null)
-        {
-            <div class="alert alert-success alert-dismissible fade show">
-                <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div id="page-content-wrapper" class="w-100 bg-light">
+            <nav class="navbar navbar-expand-lg navbar-light bg-white py-3 px-4 shadow-sm">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-bars fs-4 me-3 text-secondary" id="menu-toggle" style="cursor:pointer;"></i>
+                    <h5 class="m-0 fw-bold text-dark">@ViewData["Title"]</h5>
+                </div>
+
+                <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle fw-semibold text-dark" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                    <img src="https://ui-avatars.com/api/?name=@User.Identity.Name&background=4f46e5&color=fff&rounded=true" alt="Profil" class="rounded-circle me-1" width="30" height="30">
+                                    @User.Identity.Name
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+                                    <li><a class="dropdown-item py-2" href="/Home/Profile"><i class="fas fa-user me-2 text-muted"></i>Profilim</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger py-2" href="/Auth/Logout"><i class="fas fa-sign-out-alt me-2"></i>Çıkış Yap</a></li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item"><a class="nav-link fw-semibold" href="/Auth/Login"><i class="fas fa-sign-in-alt me-1"></i>Giriş</a></li>
+                            <li class="nav-item"><a class="btn btn-primary ms-2 px-4 rounded-pill shadow-sm" href="/Auth/Register">Kaydol</a></li>
+                        }
+                    </ul>
+                </div>
+            </nav>
+
+            <div class="container-fluid p-4">
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm">
+                        <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+                @RenderBody()
             </div>
-        }
-        @RenderBody()
+
+            <footer class="text-center py-3 text-muted small mt-auto">
+                &copy; @DateTime.Now.Year - Sınav Portal Yönetim Sistemi
+            </footer>
+        </div>
     </div>
 
-    <footer class="footer mt-5 py-3 bg-light text-center text-muted">
-        <small>&copy; @DateTime.Now.Year - Online Sınav Portalı</small>
-    </footer>
-
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById("menu-toggle").addEventListener("click", function (e) {
+            e.preventDefault();
+            document.getElementById("wrapper").classList.toggle("toggled");
+        });
+    </script>
     @RenderSection("Scripts", required: false)
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
 </html>

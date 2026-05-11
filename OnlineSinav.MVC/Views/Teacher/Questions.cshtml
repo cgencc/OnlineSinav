@@ -104,7 +104,26 @@
         var currentTotal = 0;
 
         function showAlert(msg, type) {
-            $('#alertBox').html(`<div class="alert alert-${type} alert-dismissible fade show">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`);
+            // type 'danger' ise swal için 'error' kullanıyoruz
+            var iconType = type === 'danger' ? 'error' : type;
+
+            // SweetAlert Toast Ayarları (Sağ üstte çıkıp 3 saniyede kaybolur)
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                }
+            });
+
+            Toast.fire({
+                icon: iconType,
+                title: msg
+            });
         }
 
         function updateTotalDisplay(total) {
@@ -290,23 +309,36 @@
                 });
             });
 
-            // Soru Silme
-            $(document).on('click', '.btn-delete-question', function () {
-                var id = $(this).data('id');
-                if (!confirm('Bu soruyu silmek istediğinize emin misiniz?')) return;
+        // Soru Silme İşlemi (SweetAlert ile)
+                $(document).on('click', '.btn-delete-question', function () {
+                    var id = $(this).data('id');
 
-                $.ajax({
-                    url: `/Teacher/DeleteQuestion/${id}`,
-                    type: 'DELETE',
-                    success: function (res) {
-                        showAlert(res.message || 'Soru silindi.', res.status ? 'success' : 'danger');
-                        if (res.status) loadExistingQuestions();
-                    },
-                    error: function (xhr) {
-                        showAlert('Hata: ' + (xhr.responseJSON?.message || 'Silinemedi'), 'danger');
-                    }
+                    Swal.fire({
+                        title: 'Emin misiniz?',
+                        text: "Bu soruyu silmek istediğinize emin misiniz? Bu işlem geri alınamaz!",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc3545', // Kırmızı
+                        cancelButtonColor: '#6c757d',  // Gri
+                        confirmButtonText: '<i class="fas fa-trash me-1"></i> Evet, Sil!',
+                        cancelButtonText: 'İptal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Kullanıcı onay verdi, AJAX isteğini yap
+                            $.ajax({
+                                url: `/Teacher/DeleteQuestion/${id}`,
+                                type: 'DELETE',
+                                success: function (res) {
+                                    showAlert(res.message || 'Soru silindi.', res.status ? 'success' : 'danger');
+                                    if (res.status) loadExistingQuestions();
+                                },
+                                error: function (xhr) {
+                                    showAlert('Hata: ' + (xhr.responseJSON?.message || 'Silinemedi'), 'danger');
+                                }
+                            });
+                        }
+                    });
                 });
-            });
 
             // Soru Düzenleme Modalını Aç
             $(document).on('click', '.btn-edit-question', function () {
@@ -325,8 +357,11 @@
                 var text = $('#editQuestionText').val().trim();
                 var points = parseInt($('#editPoints').val());
 
-                if (!text) { alert('Soru metni boş olamaz.'); return; }
-                if (points < 1) { alert('Puan en az 1 olmalıdır.'); return; }
+                // Eskisi: if (!text) { alert('Soru metni boş olamaz.'); return; }
+                if (!text) { showAlert('Soru metni boş olamaz.', 'warning'); return; }
+
+                // Eskisi: if (points < 1) { alert('Puan en az 1 olmalıdır.'); return; }
+                if (points < 1) { showAlert('Puan en az 1 olmalıdır.', 'warning'); return; }
 
                 // Önden toplam kontrolü yapabiliriz (mevcut puanı çıkarıp yenisini ekleyerek)
                 // Şimdilik backend kontrol edecek
