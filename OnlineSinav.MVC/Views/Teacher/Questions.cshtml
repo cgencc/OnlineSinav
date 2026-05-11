@@ -4,42 +4,94 @@
     ViewData["Title"] = "Soruları Yönet";
 }
 
-<div class="d-flex align-items-center justify-content-between mb-4">
-    <h2 class="mb-0"><i class="fas fa-question-circle me-2"></i>Soru Ekle</h2>
-    <a href="/Teacher/Index" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i>Geri</a>
+<div class="container-fluid mt-4">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h2><i class="fas fa-question-circle me-2"></i>Soruları Yönet</h2>
+        <a href="/Teacher/Index" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i>Geri</a>
+    </div>
+
+    <div id="alertBox"></div>
+
+    <!-- Toplam Puan Göstergesi -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-2">Sınav Toplam Puanı</h6>
+                    <h2 class="fw-bold text-primary mb-0"><span id="totalPoints">0</span> / 100</h2>
+                    <span class="small text-muted">Kalan: <strong id="remainingPoints">100</strong> puan</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mevcut Sorular Listesi -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white fw-bold">
+            <i class="fas fa-list me-1"></i> Mevcut Sorular
+        </div>
+        <div class="card-body" id="existingQuestions">
+            <p class="text-muted text-center py-3">Yükleniyor...</p>
+        </div>
+    </div>
+
+    <!-- Yeni Soru Ekleme Kartı -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-success text-white fw-bold">
+            <i class="fas fa-plus-circle me-1"></i> Yeni Soru Ekle
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label fw-semibold">Soru Metni</label>
+                <textarea id="QuestionText" class="form-control" rows="3" placeholder="Soruyu buraya yazın..." required></textarea>
+            </div>
+            <div class="mb-3 col-md-3">
+                <label class="form-label fw-semibold">Puan</label>
+                <input id="Points" type="number" class="form-control" value="10" min="1" max="100" />
+            </div>
+
+            <hr />
+            <h6 class="fw-bold mb-3"><i class="fas fa-list me-1"></i>Şıklar</h6>
+            <div id="optionsList"></div>
+
+            <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="addOptionBtn">
+                <i class="fas fa-plus me-1"></i>Şık Ekle
+            </button>
+
+            <div class="d-grid mt-2">
+                <button type="button" class="btn btn-success btn-lg" id="saveQuestionBtn">
+                    <i class="fas fa-save me-1"></i>Soruyu Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div id="alertBox"></div>
-
-{{-- Eklenen soruların listesi --}}
-<div id="addedQuestions" class="mb-4"></div>
-
-<div class="card shadow-sm">
-    <div class="card-header bg-primary text-white fw-bold">
-        <i class="fas fa-plus-circle me-1"></i> Yeni Soru
-    </div>
-    <div class="card-body">
-        <div class="mb-3">
-            <label class="form-label fw-semibold">Soru Metni</label>
-            <textarea id="QuestionText" class="form-control" rows="3" placeholder="Soruyu buraya yazın..." required></textarea>
-        </div>
-        <div class="mb-3 col-md-3">
-            <label class="form-label fw-semibold">Puan</label>
-            <input id="Points" type="number" class="form-control" value="10" min="1" />
-        </div>
-
-        <hr />
-        <h6 class="fw-bold mb-3"><i class="fas fa-list me-1"></i>Şıklar</h6>
-        <div id="optionsList"></div>
-
-        <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="addOptionBtn">
-            <i class="fas fa-plus me-1"></i>Şık Ekle
-        </button>
-
-        <div class="d-grid mt-2">
-            <button type="button" class="btn btn-success btn-lg" id="saveQuestionBtn">
-                <i class="fas fa-save me-1"></i>Soruyu Kaydet
-            </button>
+<!-- Soru Düzenleme Modal -->
+<div class="modal fade" id="editQuestionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title fw-bold"><i class="fas fa-edit me-2"></i>Soruyu Düzenle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editQuestionId" />
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Soru Metni</label>
+                    <textarea id="editQuestionText" class="form-control" rows="3" required></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Puan</label>
+                    <input id="editPoints" type="number" class="form-control" min="1" max="100" required />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-warning text-dark fw-bold" id="btnUpdateQuestion">
+                    <i class="fas fa-save me-1"></i>Güncelle
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -49,11 +101,64 @@
     <script>
         var examId = @Model;
         var optionCount = 0;
-        var questionCount = 0;
+        var currentTotal = 0;
 
         function showAlert(msg, type) {
-            $('#alertBox').html(`<div class="alert alert-${type} alert-dismissible fade show"><i class="fas fa-${type==='success'?'check-circle':'exclamation-triangle'} me-2"></i>${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`);
-            $('html, body').animate({ scrollTop: 0 }, 300);
+            $('#alertBox').html(`<div class="alert alert-${type} alert-dismissible fade show">${msg}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`);
+        }
+
+        function updateTotalDisplay(total) {
+            $('#totalPoints').text(total);
+            $('#remainingPoints').text(100 - total);
+            if (total > 100) {
+                $('#totalPoints').addClass('text-danger').removeClass('text-primary');
+            } else {
+                $('#totalPoints').removeClass('text-danger').addClass('text-primary');
+            }
+        }
+
+        function loadExistingQuestions() {
+            $.get(`/Teacher/GetExam/${examId}`, function(data) {
+                var html = '';
+                currentTotal = 0;
+                if (data && data.questions && data.questions.length > 0) {
+                    $.each(data.questions, function(i, q) {
+                        // Soru tipleri: q.type olabilir ama modelde olmadığı için varsayalım
+                        var optionsHtml = '';
+                        if (q.options) {
+                            $.each(q.options, function(j, opt) {
+                                optionsHtml += `<li>${opt.optionText}</li>`;
+                            });
+                        }
+                        currentTotal += q.points || 0;
+
+                        html += `
+                        <div class="card mb-2 border-secondary" id="questionCard_${q.id}">
+                            <div class="card-body py-2">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="flex-grow-1">
+                                        <strong>#${i+1}: ${q.questionText}</strong>
+                                        <span class="badge bg-primary ms-2">${q.points} puan</span>
+                                        ${q.options ? `<ul class="mb-0 mt-1 small">${optionsHtml}</ul>` : ''}
+                                    </div>
+                                    <div class="btn-group ms-2">
+                                        <button class="btn btn-sm btn-outline-warning btn-edit-question" data-id="${q.id}" data-text="${q.questionText}" data-points="${q.points}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger btn-delete-question" data-id="${q.id}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                    });
+                } else {
+                    html = '<p class="text-muted text-center py-3">Henüz soru eklenmemiş.</p>';
+                }
+                $('#existingQuestions').html(html);
+                updateTotalDisplay(currentTotal);
+            });
         }
 
         function addOptionRow(text, isCorrect) {
@@ -72,23 +177,34 @@
             $('#optionsList').append(row);
         }
 
-        // Start with 4 empty options
         $(function () {
+            // Mevcut soruları yükle
+            loadExistingQuestions();
+
+            // Başlangıçta 4 boş şık ekle
             addOptionRow('', false);
             addOptionRow('', false);
             addOptionRow('', false);
             addOptionRow('', false);
-            // Mark first as correct by default
             $('input[name="correctOption"]').first().prop('checked', true);
 
             $('#addOptionBtn').click(function () {
                 addOptionRow('', false);
             });
 
+            // Yeni soru kaydet
             $('#saveQuestionBtn').click(function () {
                 var questionText = $('#QuestionText').val().trim();
+                var points = parseInt($('#Points').val()) || 10;
+
                 if (!questionText) {
                     showAlert('Soru metni boş bırakılamaz.', 'danger');
+                    return;
+                }
+
+                // Toplam puan kontrolü (frontend)
+                if (currentTotal + points > 100) {
+                    showAlert(`Sınav toplam puanı 100'ü aşıyor! Kalan puan: ${100 - currentTotal}`, 'danger');
                     return;
                 }
 
@@ -102,29 +218,20 @@
                     var text = $(this).find('.option-text').val().trim();
                     if (!text) {
                         valid = false;
-                        return false; // break
+                        return false;
                     }
                     var isCorrect = (rowId === correctIdx);
                     if (isCorrect) hasCorrect = true;
                     options.push({ text: text, isCorrect: isCorrect });
                 });
 
-                if (!valid) {
-                    showAlert('Tüm şık metinlerini doldurun.', 'danger');
-                    return;
-                }
-                if (options.length < 2) {
-                    showAlert('En az 2 şık ekleyin.', 'danger');
-                    return;
-                }
-                if (!hasCorrect) {
-                    showAlert('Doğru cevabı işaretleyin (soldaki radyo butonu).', 'danger');
-                    return;
-                }
+                if (!valid) { showAlert('Tüm şık metinlerini doldurun.', 'danger'); return; }
+                if (options.length < 2) { showAlert('En az 2 şık ekleyin.', 'danger'); return; }
+                if (!hasCorrect) { showAlert('Doğru cevabı işaretleyin (soldaki radyo butonu).', 'danger'); return; }
 
                 var $btn = $('#saveQuestionBtn').prop('disabled', true).text('Kaydediliyor...');
 
-                // Step 1: Add the question
+                // 1. Adım: Soruyu ekle
                 $.ajax({
                     url: '/Teacher/AddQuestion',
                     type: 'POST',
@@ -132,7 +239,7 @@
                     data: JSON.stringify({
                         examId: examId,
                         questionText: questionText,
-                        points: parseInt($('#Points').val()) || 10
+                        points: points
                     }),
                     success: function (res) {
                         if (!res.status) {
@@ -143,7 +250,7 @@
 
                         var newQuestionId = res.data;
 
-                        // Step 2: Add all options sequentially
+                        // 2. Adım: Şıkları ekle
                         var promises = options.map(function (opt) {
                             return $.ajax({
                                 url: '/Teacher/AddOption',
@@ -158,25 +265,8 @@
                         });
 
                         $.when.apply($, promises).then(function () {
-                            questionCount++;
-                            // Show the added question in the list above
-                            var optHtml = options.map(function (o, i) {
-                                return `<li class="${o.isCorrect ? 'text-success fw-bold' : ''}">${o.isCorrect ? '✓ ' : ''}${o.text}</li>`;
-                            }).join('');
-
-                            var card = `
-                            <div class="card mb-2 border-success">
-                                <div class="card-body py-2">
-                                    <div class="d-flex justify-content-between">
-                                        <strong><i class="fas fa-check-circle text-success me-1"></i>Soru ${questionCount}: ${questionText}</strong>
-                                        <small class="text-muted">${$('#Points').val()} puan</small>
-                                    </div>
-                                    <ul class="mb-0 mt-1 small">${optHtml}</ul>
-                                </div>
-                            </div>`;
-                            $('#addedQuestions').append(card);
-
-                            // Reset form
+                            showAlert('Soru eklendi!', 'success');
+                            // Formu temizle
                             $('#QuestionText').val('');
                             $('#Points').val(10);
                             $('#optionsList').empty();
@@ -186,8 +276,7 @@
                             addOptionRow('', false);
                             addOptionRow('', false);
                             $('input[name="correctOption"]').first().prop('checked', true);
-
-                            showAlert(`Soru ve ${options.length} şık başarıyla eklendi!`, 'success');
+                            loadExistingQuestions(); // Listeyi yenile
                             $btn.prop('disabled', false).html('<i class="fas fa-save me-1"></i>Soruyu Kaydet');
                         }, function () {
                             showAlert('Şıklar eklenirken hata oluştu.', 'danger');
@@ -197,6 +286,67 @@
                     error: function (xhr) {
                         showAlert('Hata: ' + (xhr.responseJSON?.message || 'Soru eklenemedi'), 'danger');
                         $btn.prop('disabled', false).html('<i class="fas fa-save me-1"></i>Soruyu Kaydet');
+                    }
+                });
+            });
+
+            // Soru Silme
+            $(document).on('click', '.btn-delete-question', function () {
+                var id = $(this).data('id');
+                if (!confirm('Bu soruyu silmek istediğinize emin misiniz?')) return;
+
+                $.ajax({
+                    url: `/Teacher/DeleteQuestion/${id}`,
+                    type: 'DELETE',
+                    success: function (res) {
+                        showAlert(res.message || 'Soru silindi.', res.status ? 'success' : 'danger');
+                        if (res.status) loadExistingQuestions();
+                    },
+                    error: function (xhr) {
+                        showAlert('Hata: ' + (xhr.responseJSON?.message || 'Silinemedi'), 'danger');
+                    }
+                });
+            });
+
+            // Soru Düzenleme Modalını Aç
+            $(document).on('click', '.btn-edit-question', function () {
+                var id = $(this).data('id');
+                var text = $(this).data('text');
+                var points = $(this).data('points');
+                $('#editQuestionId').val(id);
+                $('#editQuestionText').val(text);
+                $('#editPoints').val(points);
+                $('#editQuestionModal').modal('show');
+            });
+
+            // Soru Güncelleme
+            $('#btnUpdateQuestion').click(function () {
+                var id = parseInt($('#editQuestionId').val());
+                var text = $('#editQuestionText').val().trim();
+                var points = parseInt($('#editPoints').val());
+
+                if (!text) { alert('Soru metni boş olamaz.'); return; }
+                if (points < 1) { alert('Puan en az 1 olmalıdır.'); return; }
+
+                // Önden toplam kontrolü yapabiliriz (mevcut puanı çıkarıp yenisini ekleyerek)
+                // Şimdilik backend kontrol edecek
+
+                $.ajax({
+                    url: '/Teacher/UpdateQuestion',
+                    type: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ Id: id, QuestionText: text, Points: points }),
+                    success: function (res) {
+                        if (res.status) {
+                            $('#editQuestionModal').modal('hide');
+                            showAlert('Soru güncellendi.', 'success');
+                            loadExistingQuestions();
+                        } else {
+                            showAlert('Güncelleme başarısız: ' + res.message, 'danger');
+                        }
+                    },
+                    error: function (xhr) {
+                        showAlert('Hata: ' + (xhr.responseJSON?.message || 'Güncellenemedi'), 'danger');
                     }
                 });
             });

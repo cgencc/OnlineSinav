@@ -15,4 +15,10 @@ namespace OnlineSinav.API.DTOs
         [Required] public string OptionText { get; set; } = string.Empty;
         [Required] public bool IsCorrect { get; set; } 
     }
+    public class QuestionUpdateDto
+    {
+        public int Id { get; set; }
+        public string QuestionText { get; set; } = string.Empty;
+        public int Points { get; set; }
+    }
 }

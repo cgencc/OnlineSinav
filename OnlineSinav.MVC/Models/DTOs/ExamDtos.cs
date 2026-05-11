@@ -73,6 +73,13 @@
         public bool IsCorrect { get; set; }
     }
 
+    public class QuestionUpdateDto
+    {
+        public int Id { get; set; }
+        public string QuestionText { get; set; } = string.Empty;
+        public int Points { get; set; }
+    }
+
     public class ExamResultItemDto
     {
         public string StudentName { get; set; } = string.Empty;

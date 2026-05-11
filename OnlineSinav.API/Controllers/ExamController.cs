@@ -88,9 +88,16 @@ namespace OnlineSinav.API.Controllers
 
         [Authorize(Roles = "Teacher")]
         [HttpPost("AddQuestion")]
-        public async Task<IActionResult> AddQuestion(QuestionAddDto model,
-            [FromServices] IGenericRepository<ExamQuestion> questionRepo)
+        public async Task<IActionResult> AddQuestion(QuestionAddDto model, [FromServices] IGenericRepository<ExamQuestion> questionRepo)
         {
+            // Aynı sınavdaki aktif soruların toplam puanını hesapla
+            var currentTotal = await questionRepo.AsQueryable()
+                .Where(q => q.ExamId == model.ExamId && q.IsActive)
+                .SumAsync(q => q.Points);
+
+            if (currentTotal + model.Points > 100)
+                return BadRequest(new ResultDto { Status = false, Message = $"Sınav toplam puanı 100'ü aşıyor! Kalan puan: {100 - currentTotal}" });
+
             var question = new ExamQuestion
             {
                 ExamId = model.ExamId,
@@ -102,7 +109,6 @@ namespace OnlineSinav.API.Controllers
 
             await questionRepo.AddAsync(question);
             await questionRepo.SaveAsync();
-            // Return the new ID so the client can immediately add options to it
             return Ok(new ResultDto { Status = true, Message = "Soru eklendi.", Data = question.Id });
         }
 
@@ -156,5 +162,43 @@ namespace OnlineSinav.API.Controllers
             await _examRepo.SaveAsync();
             return Ok(new ResultDto { Status = true, Message = "Sınav pasif hale getirildi." });
         }
+        [Authorize(Roles = "Teacher")]
+        [HttpDelete("DeleteQuestion/{id}")]
+        public async Task<IActionResult> DeleteQuestion(int id, [FromServices] IGenericRepository<ExamQuestion> questionRepo)
+        {
+            var question = await questionRepo.GetByIdAsync(id);
+            if (question == null)
+                return NotFound(new ResultDto { Status = false, Message = "Soru bulunamadı." });
+
+            question.IsActive = false;
+            questionRepo.Update(question);
+            await questionRepo.SaveAsync();
+
+            return Ok(new ResultDto { Status = true, Message = "Soru silindi." });
+        }   
+        [Authorize(Roles = "Teacher")]
+        [HttpPut("UpdateQuestion")]
+        public async Task<IActionResult> UpdateQuestion(QuestionUpdateDto model, [FromServices] IGenericRepository<ExamQuestion> questionRepo)
+        {
+            var question = await questionRepo.GetByIdAsync(model.Id);
+            if (question == null)
+                return NotFound(new ResultDto { Status = false, Message = "Soru bulunamadı." });
+
+            // Aynı sınavdaki diğer soruların toplam puanını hesapla (güncellenen hariç)
+            var otherQuestionsTotal = await questionRepo.AsQueryable()
+                .Where(q => q.ExamId == question.ExamId && q.Id != model.Id && q.IsActive)
+                .SumAsync(q => q.Points);
+
+            if (otherQuestionsTotal + model.Points > 100)
+                return BadRequest(new ResultDto { Status = false, Message = $"Sınav toplam puanı 100'ü aşıyor! Kalan puan: {100 - otherQuestionsTotal}" });
+
+            question.QuestionText = model.QuestionText;
+            question.Points = model.Points;
+            questionRepo.Update(question);
+            await questionRepo.SaveAsync();
+
+            return Ok(new ResultDto { Status = true, Message = "Soru güncellendi." });
+        }
+
     }
 }

@@ -58,6 +58,15 @@ namespace OnlineSinav.MVC.Controllers
             var raw = await _api.GetRawAsync("Auth/GetUsers");
             return Content(raw, "application/json");
         }
+        // Soru silme
+        [HttpDelete]
+        public async Task<IActionResult> DeleteQuestion(int id)
+            => Json(await _api.DeleteAsync<ResultDto>($"Exam/DeleteQuestion/{id}"));
+
+        // Soru güncelleme
+        [HttpPut]
+        public async Task<IActionResult> UpdateQuestion([FromBody] QuestionUpdateDto model)
+            => Json(await _api.PutAsync<ResultDto>("Exam/UpdateQuestion", model));
 
         [HttpPost]
         public async Task<IActionResult> MakeTeacher([FromBody] UserRoleDto model)
