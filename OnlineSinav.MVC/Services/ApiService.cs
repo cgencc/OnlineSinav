@@ -17,7 +17,6 @@ namespace OnlineSinav.MVC.Services
             _baseUrl = configuration["ApiSettings:BaseUrl"]!;
         }
 
-        // Her istek için token'lı, redirect'te auth header'ı koruyacak şekilde fresh client al
         private HttpClient CreateClient()
         {
             var client = _httpClientFactory.CreateClient("API");

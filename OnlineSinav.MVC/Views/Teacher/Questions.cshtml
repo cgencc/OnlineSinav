@@ -12,7 +12,6 @@
 
     <div id="alertBox"></div>
 
-    <!-- Toplam Puan Göstergesi -->
     <div class="row mb-4">
         <div class="col-md-4">
             <div class="card shadow-sm border-0">
@@ -25,7 +24,6 @@
         </div>
     </div>
 
-    <!-- Mevcut Sorular Listesi -->
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-primary text-white fw-bold">
             <i class="fas fa-list me-1"></i> Mevcut Sorular
@@ -35,7 +33,7 @@
         </div>
     </div>
 
-    <!-- Yeni Soru Ekleme Kartı -->
+
     <div class="card shadow-sm">
         <div class="card-header bg-success text-white fw-bold">
             <i class="fas fa-plus-circle me-1"></i> Yeni Soru Ekle
@@ -67,7 +65,6 @@
     </div>
 </div>
 
-<!-- Soru Düzenleme Modal -->
 <div class="modal fade" id="editQuestionModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -104,10 +101,10 @@
         var currentTotal = 0;
 
         function showAlert(msg, type) {
-            // type 'danger' ise swal için 'error' kullanıyoruz
+
             var iconType = type === 'danger' ? 'error' : type;
 
-            // SweetAlert Toast Ayarları (Sağ üstte çıkıp 3 saniyede kaybolur)
+
             const Toast = Swal.mixin({
                 toast: true,
                 position: 'top-end',
@@ -142,7 +139,7 @@
                 currentTotal = 0;
                 if (data && data.questions && data.questions.length > 0) {
                     $.each(data.questions, function(i, q) {
-                        // Soru tipleri: q.type olabilir ama modelde olmadığı için varsayalım
+   
                         var optionsHtml = '';
                         if (q.options) {
                             $.each(q.options, function(j, opt) {
@@ -197,10 +194,10 @@
         }
 
         $(function () {
-            // Mevcut soruları yükle
+
             loadExistingQuestions();
 
-            // Başlangıçta 4 boş şık ekle
+
             addOptionRow('', false);
             addOptionRow('', false);
             addOptionRow('', false);
@@ -211,7 +208,6 @@
                 addOptionRow('', false);
             });
 
-            // Yeni soru kaydet
             $('#saveQuestionBtn').click(function () {
                 var questionText = $('#QuestionText').val().trim();
                 var points = parseInt($('#Points').val()) || 10;
@@ -221,7 +217,7 @@
                     return;
                 }
 
-                // Toplam puan kontrolü (frontend)
+              
                 if (currentTotal + points > 100) {
                     showAlert(`Sınav toplam puanı 100'ü aşıyor! Kalan puan: ${100 - currentTotal}`, 'danger');
                     return;
@@ -250,7 +246,7 @@
 
                 var $btn = $('#saveQuestionBtn').prop('disabled', true).text('Kaydediliyor...');
 
-                // 1. Adım: Soruyu ekle
+                
                 $.ajax({
                     url: '/Teacher/AddQuestion',
                     type: 'POST',
@@ -269,7 +265,7 @@
 
                         var newQuestionId = res.data;
 
-                        // 2. Adım: Şıkları ekle
+                
                         var promises = options.map(function (opt) {
                             return $.ajax({
                                 url: '/Teacher/AddOption',
@@ -285,7 +281,7 @@
 
                         $.when.apply($, promises).then(function () {
                             showAlert('Soru eklendi!', 'success');
-                            // Formu temizle
+                          
                             $('#QuestionText').val('');
                             $('#Points').val(10);
                             $('#optionsList').empty();
@@ -295,7 +291,7 @@
                             addOptionRow('', false);
                             addOptionRow('', false);
                             $('input[name="correctOption"]').first().prop('checked', true);
-                            loadExistingQuestions(); // Listeyi yenile
+                            loadExistingQuestions(); 
                             $btn.prop('disabled', false).html('<i class="fas fa-save me-1"></i>Soruyu Kaydet');
                         }, function () {
                             showAlert('Şıklar eklenirken hata oluştu.', 'danger');
@@ -309,7 +305,7 @@
                 });
             });
 
-        // Soru Silme İşlemi (SweetAlert ile)
+
                 $(document).on('click', '.btn-delete-question', function () {
                     var id = $(this).data('id');
 
@@ -318,13 +314,13 @@
                         text: "Bu soruyu silmek istediğinize emin misiniz? Bu işlem geri alınamaz!",
                         icon: 'warning',
                         showCancelButton: true,
-                        confirmButtonColor: '#dc3545', // Kırmızı
-                        cancelButtonColor: '#6c757d',  // Gri
+                        confirmButtonColor: '#dc3545', 
+                        cancelButtonColor: '#6c757d', 
                         confirmButtonText: '<i class="fas fa-trash me-1"></i> Evet, Sil!',
                         cancelButtonText: 'İptal'
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            // Kullanıcı onay verdi, AJAX isteğini yap
+
                             $.ajax({
                                 url: `/Teacher/DeleteQuestion/${id}`,
                                 type: 'DELETE',
@@ -340,7 +336,7 @@
                     });
                 });
 
-            // Soru Düzenleme Modalını Aç
+
             $(document).on('click', '.btn-edit-question', function () {
                 var id = $(this).data('id');
                 var text = $(this).data('text');
@@ -351,20 +347,18 @@
                 $('#editQuestionModal').modal('show');
             });
 
-            // Soru Güncelleme
+
             $('#btnUpdateQuestion').click(function () {
                 var id = parseInt($('#editQuestionId').val());
                 var text = $('#editQuestionText').val().trim();
                 var points = parseInt($('#editPoints').val());
 
-                // Eskisi: if (!text) { alert('Soru metni boş olamaz.'); return; }
+           
                 if (!text) { showAlert('Soru metni boş olamaz.', 'warning'); return; }
 
-                // Eskisi: if (points < 1) { alert('Puan en az 1 olmalıdır.'); return; }
+         
                 if (points < 1) { showAlert('Puan en az 1 olmalıdır.', 'warning'); return; }
 
-                // Önden toplam kontrolü yapabiliriz (mevcut puanı çıkarıp yenisini ekleyerek)
-                // Şimdilik backend kontrol edecek
 
                 $.ajax({
                     url: '/Teacher/UpdateQuestion',

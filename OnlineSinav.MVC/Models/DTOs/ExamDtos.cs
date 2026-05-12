@@ -90,7 +90,6 @@
         public int Points { get; set; }
     }
 
-    // Ogrenci - gecmis listesi
     public class MyResultDto
     {
         public int ResultId { get; set; }
@@ -98,8 +97,6 @@
         public int Score { get; set; }
         public DateTime Date { get; set; }
     }
-
-    // Ogretmen - sonuc listesi
     public class ExamResultItemDto
     {
         public int ResultId { get; set; }
@@ -109,6 +106,5 @@
         public DateTime SubmitDate { get; set; }
     }
 
-    // NOT: ResultDto ve UserRoleDto zaten ayri dosyalarda tanimli,
-    // buraya eklenmedi - cakisma olmasin diye.
+
 }

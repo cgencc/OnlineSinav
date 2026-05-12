@@ -18,28 +18,26 @@ namespace OnlineSinav.API.Data
         {
             base.OnModelCreating(builder);
 
-            // Prevent cascade delete conflict on ExamResult -> Exam
+
             builder.Entity<ExamResult>()
                 .HasOne(er => er.Exam)
                 .WithMany()
                 .HasForeignKey(er => er.ExamId)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            // StudentAnswer -> ExamResult (cascade: delete answers when result deleted)
             builder.Entity<StudentAnswer>()
                 .HasOne(sa => sa.ExamResult)
                 .WithMany(er => er.Answers)
                 .HasForeignKey(sa => sa.ExamResultId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // StudentAnswer -> Question (no action to avoid multi-cascade)
+
             builder.Entity<StudentAnswer>()
                 .HasOne(sa => sa.Question)
                 .WithMany()
                 .HasForeignKey(sa => sa.QuestionId)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            // StudentAnswer -> SelectedOption (no action to avoid multi-cascade)
             builder.Entity<StudentAnswer>()
                 .HasOne(sa => sa.SelectedOption)
                 .WithMany()

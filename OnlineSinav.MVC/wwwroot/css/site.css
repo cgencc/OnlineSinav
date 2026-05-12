@@ -1,16 +1,16 @@
 :root {
-    /* Modern Renk Paleti */
-    --sidebar-bg: #0f172a; /* Çok koyu lacivert/gri */
-    --sidebar-hover: #1e293b; /* Menü hover rengi */
-    --primary-color: #4f46e5; /* Çekici bir Ýndigo mavi */
+    
+    --sidebar-bg: #0f172a; 
+    --sidebar-hover: #1e293b; 
+    --primary-color: #4f46e5; 
     --primary-hover: #4338ca;
-    --bg-color: #f8fafc; /* Açýk, temiz arka plan */
+    --bg-color: #f8fafc; 
     --text-color: #334155;
     --glass-bg: rgba(255, 255, 255, 0.95);
 }
 
 body {
-    font-family: 'Inter', sans-serif; /* Yeni okunaklý fontumuz */
+    font-family: 'Inter', sans-serif; 
     background-color: var(--bg-color);
     color: var(--text-color);
     overflow-x: hidden;
@@ -20,7 +20,7 @@ a {
     text-decoration: none;
 }
 
-/* === SIDEBAR (YAN MENÜ) DÜZENÝ === */
+
 #wrapper {
     display: flex;
     width: 100%;
@@ -49,11 +49,11 @@ a {
             background-color: var(--sidebar-hover) !important;
             border-left: 4px solid var(--primary-color);
             opacity: 1;
-            transform: translateX(6px); /* Üzerine gelince hafif saða kayma */
+            transform: translateX(6px); 
         }
 
     #sidebar .text-primary {
-        color: #818cf8 !important; /* Logodaki ikon rengi */
+        color: #818cf8 !important; 
     }
 
 #page-content-wrapper {
@@ -72,7 +72,7 @@ a {
         color: var(--primary-color) !important;
     }
 
-/* Mobil için menü aç-kapa tepkisi */
+
 @media (max-width: 768px) {
     #sidebar {
         margin-left: -260px;
@@ -89,7 +89,7 @@ a {
     }
 }
 
-/* === KARTLAR (SOFT UI) === */
+
 .card {
     border: none;
     border-radius: 16px;
@@ -100,7 +100,7 @@ a {
 }
 
     .card:hover {
-        transform: translateY(-5px); /* Yukarý süzülme efekti */
+        transform: translateY(-5px); 
         box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
     }
 
@@ -111,7 +111,7 @@ a {
     padding: 1.25rem 1.5rem;
 }
 
-/* === BUTONLAR === */
+
 .btn {
     border-radius: 8px;
     font-weight: 500;
@@ -132,7 +132,7 @@ a {
         box-shadow: 0 6px 8px -1px rgba(79, 70, 229, 0.4);
     }
 
-/* === FORM ELEMANLARI VE TABLOLAR === */
+
 .form-control {
     border-radius: 8px;
     padding: 0.6rem 1rem;
@@ -168,7 +168,7 @@ a {
         border-bottom: 1px solid #f1f5f9;
     }
 
-/* Sayfaya giriþ animasyonu */
+
 @keyframes fadeIn {
     from {
         opacity: 0;

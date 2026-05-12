@@ -37,7 +37,7 @@ namespace OnlineSinav.MVC.Controllers
             return View(items);
         }
 
-        // AJAX: ogrenci sonuc detayi
+
         [HttpGet]
         public async Task<IActionResult> GetResultDetail(int resultId)
         {

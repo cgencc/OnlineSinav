@@ -11,7 +11,7 @@ namespace OnlineSinav.API.DTOs
         [Required]
         public int DurationInMinutes { get; set; }
 
-        // Optional exam window
+   
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
     }

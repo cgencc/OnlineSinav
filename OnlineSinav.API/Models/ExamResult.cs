@@ -10,7 +10,7 @@
         public string AppUserId { get; set; } = string.Empty;
         public AppUser? AppUser { get; set; }
 
-        // NEW: Per-answer breakdown stored with this result
+
         public ICollection<StudentAnswer>? Answers { get; set; }
     }
 }

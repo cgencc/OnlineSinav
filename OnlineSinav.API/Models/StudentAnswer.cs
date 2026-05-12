@@ -1,7 +1,6 @@
 ﻿namespace OnlineSinav.API.Models
 {
-    // Stores each answer a student gave during an exam attempt.
-    // Linked to ExamResult so we can show the full breakdown later.
+
     public class StudentAnswer : AppBaseEntity
     {
         public int ExamResultId { get; set; }

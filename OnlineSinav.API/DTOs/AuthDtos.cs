@@ -19,7 +19,7 @@ namespace OnlineSinav.API.DTOs
         public string Password { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Öğrenci numarası zorunludur.")]
-        public string StudentNumber { get; set; } = string.Empty;   // artık zorunlu
+        public string StudentNumber { get; set; } = string.Empty;  
     }
 
     public class UserLoginDto

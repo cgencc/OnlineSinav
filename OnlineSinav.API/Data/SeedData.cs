@@ -19,7 +19,7 @@ namespace OnlineSinav.API.Data
                 }
             }
 
-            // Varsayılan öğretmen (admin) hesabı
+
             var teacherEmail = "teacher@sinav.com";
             var teacherUser = await userManager.FindByEmailAsync(teacherEmail);
             if (teacherUser == null)

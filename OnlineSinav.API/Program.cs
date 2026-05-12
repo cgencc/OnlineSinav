@@ -46,7 +46,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// camelCase JSON - JS tarafýnda undefined olmamasý için
+
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -82,7 +82,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// CORS - MVC'nin API'ye eriþebilmesi için
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("MvcPolicy", policy =>
@@ -109,8 +109,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Geliþtirme ortamýnda redirect devre dýþý - HttpClient redirect'te auth header düþürür
-// app.UseHttpsRedirection();
+
 
 app.UseCors("MvcPolicy");
 app.UseAuthentication();

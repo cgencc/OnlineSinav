@@ -1,4 +1,4 @@
-﻿// Models/DTOs/AuthDTOs.cs
+﻿
 namespace OnlineSinav.MVC.Models.DTOs
 {
     public class UserLoginDto

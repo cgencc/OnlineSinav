@@ -9,7 +9,7 @@
         public int ExamId { get; set; }
         public Exam? Exam { get; set; }
 
-        // Sorunun şıkları
+
         public ICollection<QuestionOption>? Options { get; set; }
     }
 }

@@ -49,7 +49,7 @@
             const timerInterval = setInterval(function () {
                 if (totalSeconds <= 0) {
                     clearInterval(timerInterval);
-                    submitExam(); // süre doldu, otomatik gönder
+                    submitExam(); 
                     return;
                 }
                 totalSeconds--;
@@ -58,7 +58,7 @@
                 timerDisplay.text(mins + ':' + (secs < 10 ? '0' : '') + secs);
             }, 1000);
 
-            // Gönderme butonu
+
             $('#submitExam').click(function () {
                 if (confirm('Sınavı tamamlamak istediğinize emin misiniz?')) {
                     clearInterval(timerInterval);
@@ -69,10 +69,10 @@
             function submitExam() {
                 let examId = $('.exam-container').data('exam-id');
                 let answers = [];
-                // Form verilerini topla
+     
                 $('input[name^="answers"]:checked').each(function() {
-                    let name = $(this).attr('name'); // answers[0].SelectedOptionId
-                    let index = name.match(/\d+/)[0]; // köşeli parantez içindeki index
+                    let name = $(this).attr('name'); 
+                    let index = name.match(/\d+/)[0]; 
                     let questionId = $(`input[name="answers[${index}].QuestionId"]`).val();
                     answers.push({
                         QuestionId: parseInt(questionId),

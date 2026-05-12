@@ -42,10 +42,10 @@ namespace OnlineSinav.MVC.Controllers
                 var token = result.Data?.ToString();
                 if (!string.IsNullOrEmpty(token))
                 {
-                    // Token'ı API istekleri için sakla
+
                     _tokenStorage.StoreToken(token);
 
-                    // Token'dan claim'leri çıkarıp MVC oturumu aç
+                   
                     await SignInWithToken(token);
 
                     return RedirectToAction("Index", "Home");

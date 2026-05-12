@@ -6,7 +6,6 @@
         public string? Description { get; set; }
         public int DurationInMinutes { get; set; }
 
-        // NEW: Exam availability window. Students can only enter between these times.
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
 
