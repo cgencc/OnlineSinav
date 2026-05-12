@@ -27,13 +27,10 @@
 </div>
 
 @section Scripts {
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-    
     <script>
         $(function () {
-            // SweetAlert Toast Fonksiyonu
             function showToast(msg, type) {
                 var iconType = type === 'danger' ? 'error' : type;
                 Swal.mixin({
@@ -45,15 +42,11 @@
                 $.ajax({
                     url: '/Teacher/GetUsers',
                     type: 'GET',
-                    dataType: 'json', // jQuery'yi JSON beklediğine zorluyoruz
+                    dataType: 'json',
                     success: function (res) {
-                        // Backend'den string dönerse manuel parse et
                         var parsedRes = typeof res === 'string' ? JSON.parse(res) : res;
-                        
-                        // PascalCase (Data) ve camelCase (data) sorununu aşan güvenli atama
                         var users = parsedRes.data || parsedRes.Data || (Array.isArray(parsedRes) ? parsedRes : []);
-                        
-                        // Tablo önceden DataTables ise yok et (yeniden çizmek için)
+
                         if ($.fn.DataTable.isDataTable('#usersTable')) {
                             $('#usersTable').DataTable().clear().destroy();
                         }
@@ -61,58 +54,57 @@
                         var rows = '';
                         if (users && users.length > 0) {
                             $.each(users, function (i, u) {
-                                var userName      = u.userName      ?? u.UserName      ?? '';
-                                var fullName      = u.fullName      ?? u.FullName      ?? '';
-                                var studentNumber = u.studentNumber ?? u.StudentNumber ?? '-';
-                                var rol           = u.rol           ?? u.Rol ?? u.role ?? u.Role ?? 'Student';
+                                var userName      = u.userName      || u.UserName      || '';
+                                var fullName      = u.fullName      || u.FullName      || '';
+                                var studentNumber = u.studentNumber || u.StudentNumber || '-';
+                                var rol           = u.rol           || u.Rol || u.role || u.Role || 'Student';
 
                                 var badgeClass = rol === 'Teacher' ? 'bg-primary' : 'bg-secondary';
-                                var roleLabel  = rol === 'Teacher' ? 'Öğretmen' : 'Öğrenci';
+                                var roleLabel  = rol === 'Teacher' ? 'Ogretmen' : 'Ogrenci';
                                 var roleBtn    = rol === 'Teacher'
-                                    ? `<button class="btn btn-sm btn-outline-warning revoke-btn" data-username="${userName}"><i class="fas fa-user-minus me-1"></i>Yetkiyi Al</button>`
-                                    : `<button class="btn btn-sm btn-outline-success make-btn" data-username="${userName}"><i class="fas fa-user-graduate me-1"></i>Öğretmen Yap</button>`;
+                                    ? '<button class="btn btn-sm btn-outline-warning revoke-btn" data-username="' + userName + '"><i class="fas fa-user-minus me-1"></i>Yetkiyi Al</button>'
+                                    : '<button class="btn btn-sm btn-outline-success make-btn" data-username="' + userName + '"><i class="fas fa-user-graduate me-1"></i>Ogretmen Yap</button>';
 
-                                rows += `<tr>
-                                    <td class="fw-semibold">${userName}</td>
-                                    <td>${fullName}</td>
-                                    <td>${studentNumber}</td>
-                                    <td><span class="badge ${badgeClass}">${roleLabel}</span></td>
-                                    <td class="text-end">${roleBtn}</td>
-                                </tr>`;
+                                rows += '<tr>'
+                                    + '<td class="fw-semibold">' + userName + '</td>'
+                                    + '<td>' + fullName + '</td>'
+                                    + '<td>' + studentNumber + '</td>'
+                                    + '<td><span class="badge ' + badgeClass + '">' + roleLabel + '</span></td>'
+                                    + '<td class="text-end">' + roleBtn + '</td>'
+                                    + '</tr>';
                             });
+                        } else {
+                            rows = '<tr><td colspan="5" class="text-center text-muted">Kayitli kullanici bulunamadi.</td></tr>';
                         }
-                        
-                        $('#usersTable tbody').html(rows);
 
-                        // DataTables'ı başlat
+                        $('#usersTable tbody').html(rows);
                         $('#usersTable').DataTable({
                             language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/tr.json' },
                             pageLength: 10,
                             responsive: true
                         });
                     },
-                    error: function () {
-                        showToast('Kullanıcılar yüklenemedi.', 'danger');
+                    error: function (xhr) {
+                        console.error('GetUsers failed:', xhr.status, xhr.responseText);
+                        showToast('Kullanicilar yuklenemedi. (HTTP ' + xhr.status + ')', 'danger');
                     }
                 });
             }
 
             loadUsers();
 
-            // Öğretmen Yapma (Güvenli Mesaj Okuma ile)
             $(document).on('click', '.make-btn', function () {
                 var uname = $(this).data('username');
-                
                 Swal.fire({
                     title: 'Emin misiniz?',
-                    text: `"${uname}" adlı kullanıcıyı öğretmen yapmak istiyor musunuz?`,
+                    text: '"' + uname + '" adli kullaniciyi ogretmen yapmak istiyor musunuz?',
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonColor: '#198754',
                     cancelButtonColor: '#6c757d',
                     confirmButtonText: 'Evet, Onayla',
-                    cancelButtonText: 'İptal'
-                }).then((result) => {
+                    cancelButtonText: 'Iptal'
+                }).then(function (result) {
                     if (result.isConfirmed) {
                         $.ajax({
                             url: '/Teacher/MakeTeacher',
@@ -120,29 +112,31 @@
                             contentType: 'application/json',
                             data: JSON.stringify({ userName: uname }),
                             success: function (res) {
-                                var msg = res.message || res.Message || 'İşlem başarılı.';
-                                var status = res.status !== undefined ? res.status : res.Status;
-                                showToast(msg, status ? 'success' : 'danger');
+                                var msg = res.message || res.Message || 'Islem basarili.';
+                                var ok  = res.status !== undefined ? res.status : res.Status;
+                                showToast(msg, ok ? 'success' : 'danger');
                                 loadUsers();
+                            },
+                            error: function (xhr) {
+                                showToast('Hata: islem basarisiz (HTTP ' + xhr.status + ')', 'danger');
                             }
                         });
                     }
                 });
             });
 
-            // Öğretmen Yetkisi Alma (Güvenli Mesaj Okuma ile)
             $(document).on('click', '.revoke-btn', function () {
                 var uname = $(this).data('username');
-                
                 Swal.fire({
-                    title: 'Yetki Alınıyor',
-                    text: `"${uname}" adlı kullanıcının öğretmen yetkisi iptal edilecek!`,
+                    title: 'Yetki Aliniyor',
+                    text: '"' + uname + '" adli kullanicinin ogretmen yetkisi iptal edilecek!',
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#ffc107',
                     cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Evet, İptal Et'
-                }).then((result) => {
+                    confirmButtonText: 'Evet, Iptal Et',
+                    cancelButtonText: 'Iptal'
+                }).then(function (result) {
                     if (result.isConfirmed) {
                         $.ajax({
                             url: '/Teacher/RevokeTeacher',
@@ -150,10 +144,13 @@
                             contentType: 'application/json',
                             data: JSON.stringify({ userName: uname }),
                             success: function (res) {
-                                var msg = res.message || res.Message || 'İşlem başarılı.';
-                                var status = res.status !== undefined ? res.status : res.Status;
-                                showToast(msg, status ? 'success' : 'danger');
+                                var msg = res.message || res.Message || 'Islem basarili.';
+                                var ok  = res.status !== undefined ? res.status : res.Status;
+                                showToast(msg, ok ? 'success' : 'danger');
                                 loadUsers();
+                            },
+                            error: function (xhr) {
+                                showToast('Hata: islem basarisiz (HTTP ' + xhr.status + ')', 'danger');
                             }
                         });
                     }

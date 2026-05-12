@@ -4,7 +4,11 @@
     {
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
-        public int DurationInMinutes { get; set; } 
+        public int DurationInMinutes { get; set; }
+
+        // NEW: Exam availability window. Students can only enter between these times.
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
 
         public string AppUserId { get; set; } = string.Empty;
         public AppUser? AppUser { get; set; }

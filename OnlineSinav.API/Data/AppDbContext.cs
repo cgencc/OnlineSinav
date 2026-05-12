@@ -12,17 +12,38 @@ namespace OnlineSinav.API.Data
         public DbSet<ExamQuestion> ExamQuestions { get; set; }
         public DbSet<QuestionOption> QuestionOptions { get; set; }
         public DbSet<ExamResult> ExamResults { get; set; }
+        public DbSet<StudentAnswer> StudentAnswers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
 
-            // Cascade delete çakışmasını önlemek için kural ekliyoruz
-            // (Bir sınav silindiğinde, sonuçların silinmesi kurallarını düzenliyoruz)
+            // Prevent cascade delete conflict on ExamResult -> Exam
             builder.Entity<ExamResult>()
                 .HasOne(er => er.Exam)
                 .WithMany()
                 .HasForeignKey(er => er.ExamId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // StudentAnswer -> ExamResult (cascade: delete answers when result deleted)
+            builder.Entity<StudentAnswer>()
+                .HasOne(sa => sa.ExamResult)
+                .WithMany(er => er.Answers)
+                .HasForeignKey(sa => sa.ExamResultId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // StudentAnswer -> Question (no action to avoid multi-cascade)
+            builder.Entity<StudentAnswer>()
+                .HasOne(sa => sa.Question)
+                .WithMany()
+                .HasForeignKey(sa => sa.QuestionId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // StudentAnswer -> SelectedOption (no action to avoid multi-cascade)
+            builder.Entity<StudentAnswer>()
+                .HasOne(sa => sa.SelectedOption)
+                .WithMany()
+                .HasForeignKey(sa => sa.SelectedOptionId)
                 .OnDelete(DeleteBehavior.NoAction);
         }
     }

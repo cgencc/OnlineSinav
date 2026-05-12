@@ -1,36 +1,143 @@
-﻿@model int  
-@* ExamId *@
-@{
-    ViewData["Title"] = "Sınav Sonuçları";
+﻿@{
+    ViewData["Title"] = "Sinav Sonuclari";
 }
 
-<h2>Sınav Sonuçları (ID: @Model)</h2>
-<table class="table table-bordered" id="resultsTable">
-    <thead><tr><th>Öğrenci</th><th>Numara</th><th>Puan</th><th>Tarih</th></tr></thead>
-    <tbody></tbody>
-</table>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold"><i class="fas fa-chart-bar me-2 text-primary"></i>Sinav Sonuclari</h2>
+    <a href="/Teacher/Index" class="btn btn-outline-secondary rounded-pill px-4">
+        <i class="fas fa-arrow-left me-2"></i>Geri
+    </a>
+</div>
 
-<a href="/Teacher/Index" class="btn btn-secondary">Geri</a>
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <table class="table table-hover align-middle w-100" id="resultsTable">
+            <thead class="table-light">
+                <tr>
+                    <th>Ogrenci Adi</th>
+                    <th>Ogrenci No</th>
+                    <th>Puan</th>
+                    <th>Tarih</th>
+                    <th class="text-end">Detay</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Detay Modal -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-user-graduate me-2"></i><span id="modalStudentName"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" id="modalBody">
+                <div class="text-center p-5"><div class="spinner-border text-primary"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
     <script>
-        $(function() {
-            $.get(`/Teacher/GetExamResults/@Model`, function(res) {
-                if (res.status && res.data) {
-                    let rows = '';
-                    $.each(res.data, function(i, r) {
-                        rows += `<tr>
-                            <td>${r.studentName}</td>
-                            <td>${r.studentNumber || '-'}</td>
-                            <td>${r.score}</td>
-                            <td>${new Date(r.submitDate).toLocaleString()}</td>
-                        </tr>`;
-                    });
+        $(function () {
+            var examId = @(Model is int eid ? eid.ToString() : "0");
+
+            function showToast(msg, type) {
+                Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 })
+                    .fire({ icon: type === 'danger' ? 'error' : type, title: msg });
+            }
+
+            function loadResults() {
+                $.get('/Teacher/GetExamResults?examId=' + examId, function (res) {
+                    var parsed = typeof res === 'string' ? JSON.parse(res) : res;
+                    var data   = parsed.data || parsed.Data || [];
+
+                    if ($.fn.DataTable.isDataTable('#resultsTable'))
+                        $('#resultsTable').DataTable().destroy();
+
+                    var rows = '';
+                    if (data && data.length > 0) {
+                        $.each(data, function (i, r) {
+                            var scoreClass = r.score >= 50 ? 'bg-success' : 'bg-danger';
+                            var d = new Date(r.submitDate);
+                            var dateStr = d.toLocaleDateString('tr-TR') + ' ' + d.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+                            rows += '<tr>'
+                                + '<td class="fw-semibold">' + (r.studentName || '-') + '</td>'
+                                + '<td>' + (r.studentNumber || '-') + '</td>'
+                                + '<td><span class="badge ' + scoreClass + ' rounded-pill px-3">' + r.score + ' / 100</span></td>'
+                                + '<td>' + dateStr + '</td>'
+                                + '<td class="text-end"><button class="btn btn-sm btn-outline-primary btn-detail" data-id="' + r.resultId + '" data-name="' + (r.studentName || '') + '"><i class="fas fa-eye me-1"></i>Detay</button></td>'
+                                + '</tr>';
+                        });
+                    } else {
+                        rows = '<tr><td colspan="5" class="text-center text-muted py-4">Henuz sonuc yok.</td></tr>';
+                    }
+
                     $('#resultsTable tbody').html(rows);
-                } else {
-                    $('#resultsTable tbody').html('<tr><td colspan="4">Sonuç bulunamadı.</td></tr>');
-                }
+                    $('#resultsTable').DataTable({
+                        language: { url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/tr.json' },
+                        pageLength: 10,
+                        order: [[3, 'desc']]
+                    });
+                }).fail(function (xhr) {
+                    showToast('Sonuclar yuklenemedi. HTTP ' + xhr.status, 'danger');
+                });
+            }
+
+            loadResults();
+
+            $(document).on('click', '.btn-detail', function () {
+                var resultId   = $(this).data('id');
+                var studentName = $(this).data('name');
+                $('#modalStudentName').text(studentName);
+                $('#modalBody').html('<div class="text-center p-5"><div class="spinner-border text-primary"></div></div>');
+                $('#detailModal').modal('show');
+
+                $.get('/Teacher/GetStudentResultDetail?resultId=' + resultId, function (res) {
+                    var parsed = typeof res === 'string' ? JSON.parse(res) : res;
+                    var d      = parsed.data || parsed.Data;
+                    if (!d) { $('#modalBody').html('<p class="p-4 text-danger">Detay yuklenemedi.</p>'); return; }
+
+                    var submitDate = new Date(d.submitDate);
+                    var dateStr    = submitDate.toLocaleDateString('tr-TR') + ' ' + submitDate.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+                    var scoreClass = d.score >= 50 ? 'text-success' : 'text-danger';
+
+                    var html = '<div class="p-3 bg-light border-bottom d-flex gap-4">'
+                        + '<span><strong>Sinav:</strong> ' + d.examTitle + '</span>'
+                        + '<span><strong>Puan:</strong> <span class="fw-bold ' + scoreClass + '">' + d.score + ' / 100</span></span>'
+                        + '<span><strong>Tarih:</strong> ' + dateStr + '</span>'
+                        + '</div>'
+                        + '<div class="p-3"><div class="accordion" id="answersAccordion">';
+
+                    $.each(d.answers, function (i, a) {
+                        var icon   = a.isCorrect ? '<i class="fas fa-check-circle text-success me-2"></i>' : '<i class="fas fa-times-circle text-danger me-2"></i>';
+                        var header = a.isCorrect ? 'list-group-item-success' : 'list-group-item-danger';
+                        html += '<div class="accordion-item border mb-2 rounded">'
+                            + '<h2 class="accordion-header">'
+                            + '<button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#ans' + i + '">'
+                            + icon + '<strong>S' + (i+1) + ':</strong>&nbsp;' + a.questionText + '&nbsp;<span class="badge bg-secondary ms-2">' + a.points + ' pt</span>'
+                            + '</button></h2>'
+                            + '<div id="ans' + i + '" class="accordion-collapse collapse">'
+                            + '<div class="accordion-body py-2">'
+                            + '<ul class="list-group list-group-flush">'
+                            + '<li class="list-group-item ' + (a.isCorrect ? 'list-group-item-success' : 'list-group-item-danger') + '"><strong>Secilen:</strong> ' + (a.selectedOptionText || '-') + '</li>'
+                            + (!a.isCorrect ? '<li class="list-group-item list-group-item-success"><strong>Dogru Cevap:</strong> ' + a.correctOptionText + '</li>' : '')
+                            + '</ul>'
+                            + '</div></div></div>';
+                    });
+
+                    html += '</div></div>';
+                    $('#modalBody').html(html);
+                }).fail(function () {
+                    $('#modalBody').html('<p class="p-4 text-danger">Detay yuklenemedi.</p>');
+                });
             });
         });
     </script>

@@ -1,13 +1,13 @@
 ﻿@{
-    ViewData["Title"] = "Sınav Yönetimi";
+    ViewData["Title"] = "Sinav Yonetimi";
 }
 
 <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold"><i class="fas fa-tasks me-2 text-primary"></i>Sınav Yönetimi</h2>
+    <h2 class="fw-bold"><i class="fas fa-tasks me-2 text-primary"></i>Sinav Yonetimi</h2>
     <a href="/Teacher/Create" class="btn btn-primary shadow-sm rounded-pill px-4">
-        <i class="fas fa-plus me-2"></i>Yeni Sınav Ekle
+        <i class="fas fa-plus me-2"></i>Yeni Sinav Ekle
     </a>
 </div>
 
@@ -16,10 +16,11 @@
         <table class="table table-hover align-middle w-100" id="examsTable">
             <thead class="table-light">
                 <tr>
-                    <th>Sınav Adı</th>
-                    <th>Süre</th>
-                    <th>Soru Sayısı</th>
-                    <th class="text-end">İşlemler</th>
+                    <th>Sinav Adi</th>
+                    <th>Durum</th>
+                    <th>Sure</th>
+                    <th>Soru Sayisi</th>
+                    <th class="text-end">Islemler</th>
                 </tr>
             </thead>
             <tbody>
@@ -29,12 +30,10 @@
 </div>
 
 @section Scripts {
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-
     <script>
-        $(function() {
+        $(function () {
             function showToast(msg, type) {
                 var iconType = type === 'danger' ? 'error' : type;
                 Swal.mixin({
@@ -43,68 +42,73 @@
             }
 
             function loadExams() {
-                $.get('/Teacher/GetExams', function(data) {
+                $.get('/Teacher/GetExams', function (data) {
                     if ($.fn.DataTable.isDataTable('#examsTable')) {
                         $('#examsTable').DataTable().destroy();
                     }
 
-                    let html = '';
+                    var html = '';
                     if (data && data.length > 0) {
-                        $.each(data, function(i, exam) {
-                            html += `
-                            <tr>
-                                <td class="fw-semibold text-dark">${exam.title}</td>
-                                <td><span class="badge bg-info text-dark rounded-pill px-3">${exam.durationInMinutes} Dakika</span></td>
-                                <td><span class="badge bg-secondary rounded-pill px-3">${exam.questionCount} Soru</span></td>
-                                <td class="text-end">
-                                    <a href="/Teacher/Edit/${exam.id}" class="btn btn-sm btn-outline-warning" title="Sınavı Düzenle"><i class="fas fa-edit"></i></a>
-                                    <a href="/Teacher/Questions?examId=${exam.id}" class="btn btn-sm btn-outline-primary" title="Soruları Yönet"><i class="fas fa-list"></i></a>
-                                    <a href="/Teacher/Results?examId=${exam.id}" class="btn btn-sm btn-outline-success" title="Sonuçları Gör"><i class="fas fa-chart-bar"></i></a>
-                                    <button class="btn btn-sm btn-outline-danger btn-delete" data-id="${exam.id}" title="Sınavı Sil"><i class="fas fa-trash"></i></button>
-                                </td>
-                            </tr>`;
+                        $.each(data, function (i, exam) {
+                            var statusBadge = exam.isActive
+                                ? '<span class="badge bg-success rounded-pill px-3">Aktif</span>'
+                                : '<span class="badge bg-danger rounded-pill px-3">Pasif</span>';
+
+                            html += '<tr>'
+                                + '<td class="fw-semibold text-dark">' + exam.title + '</td>'
+                                + '<td>' + statusBadge + '</td>'
+                                + '<td><span class="badge bg-info text-dark rounded-pill px-3">' + exam.durationInMinutes + ' Dakika</span></td>'
+                                + '<td><span class="badge bg-secondary rounded-pill px-3">' + exam.questionCount + ' Soru</span></td>'
+                                + '<td class="text-end">'
+                                + '<a href="/Teacher/Edit/' + exam.id + '" class="btn btn-sm btn-outline-warning" title="Sinavi Duzenle"><i class="fas fa-edit"></i></a> '
+                                + '<a href="/Teacher/Questions?examId=' + exam.id + '" class="btn btn-sm btn-outline-primary" title="Sorulari Yonet"><i class="fas fa-list"></i></a> '
+                                + '<a href="/Teacher/Results?examId=' + exam.id + '" class="btn btn-sm btn-outline-success" title="Sonuclari Gor"><i class="fas fa-chart-bar"></i></a> '
+                                + '<button class="btn btn-sm btn-outline-danger btn-delete" data-id="' + exam.id + '" title="Sinavi Sil"><i class="fas fa-trash"></i></button>'
+                                + '</td>'
+                                + '</tr>';
                         });
                     }
 
                     $('#examsTable tbody').html(html);
-
                     $('#examsTable').DataTable({
                         language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/tr.json' },
-                        order: [[0, 'asc']], // Varsayılan olarak Ada göre sırala
+                        order: [[0, 'asc']],
                         pageLength: 10
                     });
+                }).fail(function (xhr) {
+                    showToast('Sinavlar yuklenemedi. (HTTP ' + xhr.status + ')', 'danger');
+                    console.error('GetExams failed:', xhr.status, xhr.responseText);
                 });
             }
 
             loadExams();
 
-            $(document).on('click', '.btn-delete', function() {
-                let id = $(this).data('id');
-
+            $(document).on('click', '.btn-delete', function () {
+                var id = $(this).data('id');
                 Swal.fire({
-                    title: 'Silmek istediğinize emin misiniz?',
-                    text: "Bu sınav pasife alınacak ve öğrenciler tarafından görülemeyecek!",
+                    title: 'Silmek istediginize emin misiniz?',
+                    text: 'Bu sinav pasife alinacak ve ogrenciler tarafindan goruleмeyecek!',
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#dc3545',
                     cancelButtonColor: '#6c757d',
                     confirmButtonText: '<i class="fas fa-trash me-1"></i> Evet, Sil!',
-                    cancelButtonText: 'İptal'
-                }).then((result) => {
+                    cancelButtonText: 'Iptal'
+                }).then(function (result) {
                     if (result.isConfirmed) {
                         $.ajax({
-                            url: `/Teacher/DeleteExam/${id}`,
+                            url: '/Teacher/DeleteExam/' + id,
                             type: 'DELETE',
-                            success: function(res) {
+                            success: function (res) {
                                 if (res && res.status) {
                                     showToast(res.message, 'success');
                                     loadExams();
                                 } else {
-                                    showToast('Hata: ' + (res?.message || 'Silinemedi'), 'error');
+                                    showToast('Hata: ' + (res && res.message ? res.message : 'Silinemedi'), 'error');
                                 }
                             },
-                            error: function(xhr) {
-                                showToast('Hata: ' + (xhr.responseJSON?.message || 'Bağlantı hatası'), 'error');
+                            error: function (xhr) {
+                                showToast('Hata: baglanti hatasi (HTTP ' + xhr.status + ')', 'error');
                             }
                         });
                     }

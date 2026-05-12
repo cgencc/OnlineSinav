@@ -1,29 +1,123 @@
-﻿@model object
+﻿@model List<OnlineSinav.MVC.Models.DTOs.MyResultDto>
 @{
-    ViewData["Title"] = "Sınav Geçmişim";
-    var results = Model as IEnumerable<dynamic>;
+    ViewData["Title"] = "Sinav Gecmisim";
 }
 
-<h2 class="mb-4"><i class="fas fa-history me-2"></i>Sınav Geçmişim</h2>
-@if (results == null || !results.Any())
+<h2 class="mb-4 fw-bold"><i class="fas fa-history me-2 text-primary"></i>Sinav Gecmisim</h2>
+
+@if (Model == null || !Model.Any())
 {
-    <div class="alert alert-info">Henüz katıldığınız bir sınav bulunmuyor.</div>
+    <div class="alert alert-info border-0 shadow-sm">
+        <i class="fas fa-info-circle me-2"></i>Henuz katildiginiz bir sinav bulunmuyor.
+    </div>
 }
 else
 {
-    <table class="table table-striped">
-        <thead>
-            <tr><th>Sınav</th><th>Puan</th><th>Tarih</th></tr>
-        </thead>
-        <tbody>
-            @foreach (var item in results)
-            {
-                <tr>
-                    <td>@item.ExamTitle</td>
-                    <td>@item.Score</td>
-                    <td>@item.Date</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Sinav</th>
+                        <th>Puan</th>
+                        <th>Tarih</th>
+                        <th class="text-end">Detay</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@item.ExamTitle</td>
+                            <td>
+                                <span class="badge @(item.Score >= 50 ? "bg-success" : "bg-danger") rounded-pill px-3">
+                                    @item.Score / 100
+                                </span>
+                            </td>
+                            <td>@item.Date.ToString("dd.MM.yyyy HH:mm")</td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-primary btn-detail"
+                                        data-id="@item.ResultId"
+                                        data-title="@item.ExamTitle">
+                                    <i class="fas fa-eye me-1"></i>Cevaplarimi Gor
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+<!-- Detay Modal -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-list-alt me-2"></i><span id="modalExamTitle"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" id="modalBody">
+                <div class="text-center p-5"><div class="spinner-border text-primary"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            $(document).on('click', '.btn-detail', function () {
+                var resultId  = $(this).data('id');
+                var examTitle = $(this).data('title');
+                $('#modalExamTitle').text(examTitle);
+                $('#modalBody').html('<div class="text-center p-5"><div class="spinner-border text-primary"></div></div>');
+                $('#detailModal').modal('show');
+
+                $.get('/Student/GetResultDetail?resultId=' + resultId, function (res) {
+                    var parsed = typeof res === 'string' ? JSON.parse(res) : res;
+                    var d = parsed.data || parsed.Data;
+                    if (!d) { $('#modalBody').html('<p class="p-4 text-danger">Detay yuklenemedi.</p>'); return; }
+
+                    var scoreClass = d.score >= 50 ? 'text-success' : 'text-danger';
+
+                    var html = '<div class="p-3 bg-light border-bottom d-flex gap-4">'
+                        + '<span><strong>Puan:</strong> <span class="fw-bold ' + scoreClass + '">' + d.score + ' / 100</span></span>'
+                        + '</div>'
+                        + '<div class="p-3"><div class="accordion" id="answersAccordion">';
+
+                    $.each(d.answers, function (i, a) {
+                        var icon = a.isCorrect
+                            ? '<i class="fas fa-check-circle text-success me-2"></i>'
+                            : '<i class="fas fa-times-circle text-danger me-2"></i>';
+
+                        html += '<div class="accordion-item border mb-2 rounded">'
+                            + '<h2 class="accordion-header">'
+                            + '<button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse" data-bs-target="#qans' + i + '">'
+                            + icon + '<strong>S' + (i+1) + ':</strong>&nbsp;' + a.questionText
+                            + '&nbsp;<span class="badge bg-secondary ms-2">' + a.points + ' pt</span>'
+                            + '</button></h2>'
+                            + '<div id="qans' + i + '" class="accordion-collapse collapse">'
+                            + '<div class="accordion-body py-2">'
+                            + '<ul class="list-group list-group-flush">'
+                            + '<li class="list-group-item ' + (a.isCorrect ? 'list-group-item-success' : 'list-group-item-danger') + '">'
+                            + '<strong>Cevabiniz:</strong> ' + (a.selectedOptionText || '-')
+                            + (a.isCorrect ? ' <i class="fas fa-check text-success ms-2"></i>' : '')
+                            + '</li>'
+                            + (!a.isCorrect
+                                ? '<li class="list-group-item list-group-item-success"><strong>Dogru Cevap:</strong> ' + a.correctOptionText + ' <i class="fas fa-check text-success ms-2"></i></li>'
+                                : '')
+                            + '</ul>'
+                            + '</div></div></div>';
+                    });
+
+                    html += '</div></div>';
+                    $('#modalBody').html(html);
+                }).fail(function () {
+                    $('#modalBody').html('<p class="p-4 text-danger">Detay yuklenemedi.</p>');
+                });
+            });
+        });
+    </script>
 }

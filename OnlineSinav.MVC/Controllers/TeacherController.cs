@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using OnlineSinav.MVC.Services;
 using OnlineSinav.MVC.Models.DTOs;
+using OnlineSinav.MVC.Services;
 
 namespace OnlineSinav.MVC.Controllers
 {
@@ -9,7 +9,6 @@ namespace OnlineSinav.MVC.Controllers
     public class TeacherController : Controller
     {
         private readonly ApiService _api;
-
         public TeacherController(ApiService api) => _api = api;
 
         public IActionResult Index() => View();
@@ -21,7 +20,7 @@ namespace OnlineSinav.MVC.Controllers
 
         [HttpGet]
         public async Task<IActionResult> GetExams()
-            => Json(await _api.GetAsync<List<ExamListDto>>("Exam"));
+            => Json(await _api.GetAsync<List<ExamListDto>>("Exam?includeInactive=true"));
 
         [HttpGet]
         public async Task<IActionResult> GetExam(int id)
@@ -49,21 +48,29 @@ namespace OnlineSinav.MVC.Controllers
 
         [HttpGet]
         public async Task<IActionResult> GetExamResults(int examId)
-            => Json(await _api.GetAsync<ResultDto>($"Result/Exam/{examId}"));
+        {
+            var raw = await _api.GetRawAsync($"Result/Exam/{examId}");
+            return Content(raw, "application/json");
+        }
 
-        // Pass raw JSON directly to avoid Newtonsoft JArray -> System.Text.Json re-serialize bug
+        [HttpGet]
+        public async Task<IActionResult> GetStudentResultDetail(int resultId)
+        {
+            var raw = await _api.GetRawAsync($"Result/ExamDetail/{resultId}");
+            return Content(raw, "application/json");
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetUsers()
         {
             var raw = await _api.GetRawAsync("Auth/GetUsers");
             return Content(raw, "application/json");
         }
-        // Soru silme
+
         [HttpDelete]
         public async Task<IActionResult> DeleteQuestion(int id)
             => Json(await _api.DeleteAsync<ResultDto>($"Exam/DeleteQuestion/{id}"));
 
-        // Soru güncelleme
         [HttpPut]
         public async Task<IActionResult> UpdateQuestion([FromBody] QuestionUpdateDto model)
             => Json(await _api.PutAsync<ResultDto>("Exam/UpdateQuestion", model));

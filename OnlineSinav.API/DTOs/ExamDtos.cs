@@ -9,7 +9,11 @@ namespace OnlineSinav.API.DTOs
         public string? Description { get; set; }
 
         [Required]
-        public int DurationInMinutes { get; set; } 
+        public int DurationInMinutes { get; set; }
+
+        // Optional exam window
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
     }
 
     public class ExamListDto
@@ -19,6 +23,9 @@ namespace OnlineSinav.API.DTOs
         public int DurationInMinutes { get; set; }
         public DateTime CreatedDate { get; set; }
         public int QuestionCount { get; set; }
+        public bool IsActive { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
     }
 
     public class ExamUpdateDto
@@ -28,5 +35,7 @@ namespace OnlineSinav.API.DTOs
         public string? Description { get; set; }
         [Required] public int DurationInMinutes { get; set; }
         public bool IsActive { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
     }
 }

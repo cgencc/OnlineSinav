@@ -1,89 +1,153 @@
-﻿@model int?  
-@* düzenleme için exam id, yoksa null *@
-@{
-    ViewData["Title"] = Model == null ? "Yeni Sınav" : "Sınav Düzenle";
-    bool isEdit = Model != null;
+﻿@{
+    ViewData["Title"] = "Sinav Olustur / Duzenle";
 }
 
-<h2>@ViewData["Title"]</h2>
-<form id="examForm">
-    <input type="hidden" id="ExamId" value="@(isEdit ? Model.ToString() : "")" />
-    <div class="mb-3">
-        <label class="form-label">Başlık</label>
-        <input id="Title" class="form-control" required />
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Açıklama</label>
-        <textarea id="Description" class="form-control" rows="3"></textarea>
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Süre (dakika)</label>
-        <input id="DurationInMinutes" type="number" class="form-control" required min="1" />
-    </div>
-    @if (isEdit)
-    {
-        <div class="form-check mb-3">
-            <input class="form-check-input" type="checkbox" id="IsActive" checked />
-            <label class="form-check-label">Aktif</label>
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0"><i class="fas fa-graduation-cap me-2"></i>Sinav Bilgileri</h5>
+            </div>
+            <div class="card-body p-4">
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Sinav Adi *</label>
+                    <input type="text" id="examTitle" class="form-control" placeholder="Ornek: Matematik Vize Sinavi" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Aciklama</label>
+                    <textarea id="examDescription" class="form-control" rows="2" placeholder="Isteğe bagli aciklama"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Sure (Dakika) *</label>
+                    <input type="number" id="examDuration" class="form-control" min="1" max="300" value="60" />
+                </div>
+
+                <hr />
+                <p class="text-muted small mb-2"><i class="fas fa-clock me-1"></i>Sinav Tarihi Araligi — Bos birakilirsa her zaman erisebilir.</p>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Baslangic Tarihi</label>
+                        <input type="datetime-local" id="startDate" class="form-control" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Bitis Tarihi</label>
+                        <input type="datetime-local" id="endDate" class="form-control" />
+                    </div>
+                </div>
+
+                <div class="mb-4" id="isActiveWrapper" style="display:none;">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="isActive" checked />
+                        <label class="form-check-label fw-semibold" for="isActive">Sinav Aktif</label>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button id="btnSave" class="btn btn-primary px-4">
+                        <i class="fas fa-save me-2"></i>Kaydet
+                    </button>
+                    <a href="/Teacher/Index" class="btn btn-outline-secondary px-4">
+                        <i class="fas fa-arrow-left me-2"></i>Geri
+                    </a>
+                </div>
+            </div>
         </div>
-    }
-    <button type="submit" class="btn btn-success">Kaydet</button>
-    <a href="/Teacher/Index" class="btn btn-secondary">Geri</a>
-</form>
+    </div>
+</div>
 
 @section Scripts {
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>
-        $(function() {
-            @if (isEdit)
-            {
-                    <text>
-                    $.get(`/Teacher/GetExam/@Model`, function(data) {
-                        $('#Title').val(data.title);
-                        $('#Description').val(data.description);
-                        $('#DurationInMinutes').val(data.durationInMinutes);
-                        $('#IsActive').prop('checked', data.isActive);
-                    });
-                    </text>
+        $(function () {
+            var examId = @(Model is int id ? id.ToString() : "0");
+            var isEdit = examId > 0;
+
+            if (isEdit) {
+                document.title = 'Sinavi Duzenle';
+                $('#isActiveWrapper').show();
+
+                $.get('/Teacher/GetExam?id=' + examId, function (exam) {
+                    if (!exam) return;
+                    $('#examTitle').val(exam.title || '');
+                    $('#examDescription').val(exam.description || '');
+                    $('#examDuration').val(exam.durationInMinutes || 60);
+                    $('#isActive').prop('checked', exam.isActive !== false);
+                    if (exam.startDate) $('#startDate').val(toLocalInput(exam.startDate));
+                    if (exam.endDate)   $('#endDate').val(toLocalInput(exam.endDate));
+                });
             }
 
-            $('#examForm').submit(function(e) {
-                e.preventDefault();
-                let id = $('#ExamId').val();
-                let examData = {
-                    title: $('#Title').val(),
-                    description: $('#Description').val(),
-                    durationInMinutes: parseInt($('#DurationInMinutes').val()),
-                    isActive: $('#IsActive').is(':checked')
-                };
+            function toLocalInput(isoStr) {
+                var d = new Date(isoStr);
+                var pad = function(n){ return n < 10 ? '0' + n : n; };
+                return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate())
+                     + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+            }
 
-                let url, type;
-                if (id) {
-                    examData.id = parseInt(id);
-                    url = '/Teacher/UpdateExam';
-                    type = 'PUT';
-                } else {
-                    url = '/Teacher/CreateExam';
-                    type = 'POST';
+            function showToast(msg, type) {
+                Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 })
+                    .fire({ icon: type === 'danger' ? 'error' : type, title: msg });
+            }
+
+            $('#btnSave').on('click', function () {
+                var title    = $.trim($('#examTitle').val());
+                var duration = parseInt($('#examDuration').val());
+                var start    = $('#startDate').val();
+                var end      = $('#endDate').val();
+
+                if (!title) { showToast('Sinav adi zorunludur!', 'warning'); return; }
+                if (!duration || duration < 1) { showToast('Sure en az 1 dakika olmalidir!', 'warning'); return; }
+                if (start && end && new Date(start) >= new Date(end)) {
+                    showToast('Bitis tarihi baslangictan sonra olmalidir!', 'warning'); return;
                 }
 
-                $.ajax({
-                    url: url,
-                    type: type,
-                    contentType: 'application/json',
-                    data: JSON.stringify(examData),
-                    success: function(res) {
-                        if (res.status) {
-                            alert(res.message);
-                            window.location.href = '/Teacher/Index';
-                        } else {
-                            alert(res.message);
-                        }
-                    },
-                    error: function(xhr) {
-                        alert('Hata: ' + (xhr.responseJSON?.message || 'İşlem başarısız'));
-                    }
-                });
+                var payload = {
+                    title:             title,
+                    description:       $.trim($('#examDescription').val()),
+                    durationInMinutes: duration,
+                    startDate:         start || null,
+                    endDate:           end   || null
+                };
+
+                if (isEdit) {
+                    payload.id       = examId;
+                    payload.isActive = $('#isActive').prop('checked');
+
+                    $.ajax({
+                        url:         '/Teacher/UpdateExam',
+                        type:        'PUT',
+                        contentType: 'application/json',
+                        data:        JSON.stringify(payload),
+                        success: function (res) {
+                            if (res && res.status) {
+                                showToast('Sinav guncellendi!', 'success');
+                                setTimeout(function(){ window.location = '/Teacher/Index'; }, 1200);
+                            } else {
+                                showToast(res ? res.message : 'Hata olustu', 'danger');
+                            }
+                        },
+                        error: function (xhr) { showToast('Hata: HTTP ' + xhr.status, 'danger'); }
+                    });
+                } else {
+                    $.ajax({
+                        url:         '/Teacher/CreateExam',
+                        type:        'POST',
+                        contentType: 'application/json',
+                        data:        JSON.stringify(payload),
+                        success: function (res) {
+                            if (res && res.status) {
+                                showToast('Sinav olusturuldu! Simdi sorulari ekleyebilirsiniz.', 'success');
+                                var newId = res.data || (res.Data);
+                                setTimeout(function(){
+                                    window.location = '/Teacher/Questions?examId=' + newId;
+                                }, 1400);
+                            } else {
+                                showToast(res ? res.message : 'Hata olustu', 'danger');
+                            }
+                        },
+                        error: function (xhr) { showToast('Hata: HTTP ' + xhr.status, 'danger'); }
+                    });
+                }
             });
         });
     </script>

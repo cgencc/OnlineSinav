@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using OnlineSinav.MVC.Models.DTOs;
 using OnlineSinav.MVC.Services;
 
@@ -9,45 +10,46 @@ namespace OnlineSinav.MVC.Controllers
     public class StudentController : Controller
     {
         private readonly ApiService _api;
+        public StudentController(ApiService api) => _api = api;
 
-        public StudentController(ApiService api)
-        {
-            _api = api;
-        }
-
-        // Sınav listesi
         public async Task<IActionResult> Exams()
         {
             var exams = await _api.GetAsync<List<ExamListDto>>("Exam");
-            return View(exams);
+            return View(exams ?? new List<ExamListDto>());
         }
 
-        // Sınava girme sayfası (sınav ID ile)
         public async Task<IActionResult> TakeExam(int id)
         {
             var exam = await _api.GetAsync<ExamDetailDto>($"Exam/{id}");
-            if (exam == null)
-                return NotFound();
-
-            // Daha önce girilmiş mi kontrolü: API'den alabiliriz ama şimdilik view tarafında hata gösteririz.
+            if (exam == null) return NotFound();
             return View(exam);
         }
+
         public async Task<IActionResult> MyResults()
         {
-            var results = await _api.GetAsync<ResultDto>("Result/MyResults");
-            return View(results?.Data);
+            var result = await _api.GetAsync<ResultDto>("Result/MyResults");
+            List<MyResultDto> items = new();
+            if (result != null && result.Status && result.Data != null)
+            {
+                var json = JsonConvert.SerializeObject(result.Data);
+                items = JsonConvert.DeserializeObject<List<MyResultDto>>(json) ?? new();
+            }
+            return View(items);
         }
-        public async Task<IActionResult> Profile()
+
+        // AJAX: ogrenci sonuc detayi
+        [HttpGet]
+        public async Task<IActionResult> GetResultDetail(int resultId)
         {
-            var result = await _api.GetAsync<ResultDto>("Auth/GetProfile");
-            return View(result?.Data);
+            var raw = await _api.GetRawAsync($"Result/Detail/{resultId}");
+            return Content(raw, "application/json");
         }
+
         [HttpPost]
         public async Task<IActionResult> SubmitExam([FromBody] ExamSubmitDto model)
         {
             var result = await _api.PostAsync<ResultDto>("Result/Submit", model);
             return Json(result);
         }
-
     }
-}
+}   

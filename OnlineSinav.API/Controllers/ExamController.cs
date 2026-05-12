@@ -20,9 +20,19 @@ namespace OnlineSinav.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll(string? search = null)
+        public async Task<IActionResult> GetAll(string? search = null, bool includeInactive = false)
         {
-            var query = _examRepo.AsQueryable().Where(e => e.IsActive);
+            var now = DateTime.Now;
+            var query = _examRepo.AsQueryable();
+
+            if (!includeInactive)
+            {
+                query = query.Where(e =>
+                    e.IsActive &&
+                    (e.StartDate == null || e.StartDate <= now) &&
+                    (e.EndDate == null || e.EndDate >= now));
+            }
+
             if (!string.IsNullOrEmpty(search))
                 query = query.Where(e => e.Title.ToLower().Contains(search.ToLower()));
 
@@ -32,7 +42,10 @@ namespace OnlineSinav.API.Controllers
                 Title = e.Title,
                 DurationInMinutes = e.DurationInMinutes,
                 CreatedDate = e.CreatedDate,
-                QuestionCount = e.Questions!.Count
+                QuestionCount = e.Questions!.Count,
+                IsActive = e.IsActive,
+                StartDate = e.StartDate,
+                EndDate = e.EndDate
             }).ToListAsync();
 
             return Ok(exams);
@@ -41,13 +54,19 @@ namespace OnlineSinav.API.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
+            var now = DateTime.Now;
             var exam = await _examRepo.AsQueryable()
-                // Include ederken sadece aktif soruları filtreleyebilirsiniz (EF Core 5.0+)
                 .Include(e => e.Questions!.Where(q => q.IsActive)).ThenInclude(q => q.Options)
                 .FirstOrDefaultAsync(e => e.Id == id && e.IsActive);
 
             if (exam == null)
-                return NotFound(new ResultDto { Status = false, Message = "Sınav bulunamadı." });
+                return NotFound(new ResultDto { Status = false, Message = "Sinav bulunamadi." });
+
+            if (exam.StartDate.HasValue && exam.StartDate > now)
+                return BadRequest(new ResultDto { Status = false, Message = "Sinav henuz baslamadi. Baslangic: " + exam.StartDate.Value.ToString("dd.MM.yyyy HH:mm") });
+
+            if (exam.EndDate.HasValue && exam.EndDate < now)
+                return BadRequest(new ResultDto { Status = false, Message = "Sinav suresi doldu. Bitis: " + exam.EndDate.Value.ToString("dd.MM.yyyy HH:mm") });
 
             var safeExamData = new
             {
@@ -55,7 +74,8 @@ namespace OnlineSinav.API.Controllers
                 title = exam.Title,
                 description = exam.Description,
                 durationInMinutes = exam.DurationInMinutes,
-                // ÇÖZÜM BURADA: Sadece IsActive özelliği true olan (silinmemiş) soruları seçiyoruz
+                startDate = exam.StartDate,
+                endDate = exam.EndDate,
                 questions = exam.Questions!.Where(q => q.IsActive).Select(q => new
                 {
                     id = q.Id,
@@ -78,6 +98,8 @@ namespace OnlineSinav.API.Controllers
                 Title = model.Title,
                 Description = model.Description,
                 DurationInMinutes = model.DurationInMinutes,
+                StartDate = model.StartDate,
+                EndDate = model.EndDate,
                 AppUserId = userId!,
                 CreatedDate = DateTime.Now,
                 IsActive = true
@@ -85,20 +107,19 @@ namespace OnlineSinav.API.Controllers
 
             await _examRepo.AddAsync(exam);
             await _examRepo.SaveAsync();
-            return Ok(new ResultDto { Status = true, Message = "Sınav oluşturuldu.", Data = exam.Id });
+            return Ok(new ResultDto { Status = true, Message = "Sinav olusturuldu.", Data = exam.Id });
         }
 
         [Authorize(Roles = "Teacher")]
         [HttpPost("AddQuestion")]
         public async Task<IActionResult> AddQuestion(QuestionAddDto model, [FromServices] IGenericRepository<ExamQuestion> questionRepo)
         {
-            // Aynı sınavdaki aktif soruların toplam puanını hesapla
             var currentTotal = await questionRepo.AsQueryable()
                 .Where(q => q.ExamId == model.ExamId && q.IsActive)
                 .SumAsync(q => q.Points);
 
             if (currentTotal + model.Points > 100)
-                return BadRequest(new ResultDto { Status = false, Message = $"Sınav toplam puanı 100'ü aşıyor! Kalan puan: {100 - currentTotal}" });
+                return BadRequest(new ResultDto { Status = false, Message = "Sinav toplam puani 100u asiyor! Kalan puan: " + (100 - currentTotal) });
 
             var question = new ExamQuestion
             {
@@ -116,8 +137,7 @@ namespace OnlineSinav.API.Controllers
 
         [Authorize(Roles = "Teacher")]
         [HttpPost("AddOption")]
-        public async Task<IActionResult> AddOption(OptionAddDto model,
-            [FromServices] IGenericRepository<QuestionOption> optionRepo)
+        public async Task<IActionResult> AddOption(OptionAddDto model, [FromServices] IGenericRepository<QuestionOption> optionRepo)
         {
             var option = new QuestionOption
             {
@@ -130,7 +150,7 @@ namespace OnlineSinav.API.Controllers
 
             await optionRepo.AddAsync(option);
             await optionRepo.SaveAsync();
-            return Ok(new ResultDto { Status = true, Message = "Şık eklendi." });
+            return Ok(new ResultDto { Status = true, Message = "Sik eklendi." });
         }
 
         [Authorize(Roles = "Teacher")]
@@ -139,16 +159,18 @@ namespace OnlineSinav.API.Controllers
         {
             var exam = await _examRepo.GetByIdAsync(model.Id);
             if (exam == null)
-                return NotFound(new ResultDto { Status = false, Message = "Güncellenecek sınav bulunamadı." });
+                return NotFound(new ResultDto { Status = false, Message = "Guncellenecek sinav bulunamadi." });
 
             exam.Title = model.Title;
             exam.Description = model.Description;
             exam.DurationInMinutes = model.DurationInMinutes;
             exam.IsActive = model.IsActive;
+            exam.StartDate = model.StartDate;
+            exam.EndDate = model.EndDate;
 
             _examRepo.Update(exam);
             await _examRepo.SaveAsync();
-            return Ok(new ResultDto { Status = true, Message = "Sınav başarıyla güncellendi." });
+            return Ok(new ResultDto { Status = true, Message = "Sinav basariyla guncellendi." });
         }
 
         [Authorize(Roles = "Teacher")]
@@ -157,50 +179,48 @@ namespace OnlineSinav.API.Controllers
         {
             var exam = await _examRepo.GetByIdAsync(id);
             if (exam == null)
-                return NotFound(new ResultDto { Status = false, Message = "Silinecek sınav bulunamadı." });
+                return NotFound(new ResultDto { Status = false, Message = "Silinecek sinav bulunamadi." });
 
             exam.IsActive = false;
             _examRepo.Update(exam);
             await _examRepo.SaveAsync();
-            return Ok(new ResultDto { Status = true, Message = "Sınav pasif hale getirildi." });
+            return Ok(new ResultDto { Status = true, Message = "Sinav pasif hale getirildi." });
         }
+
         [Authorize(Roles = "Teacher")]
         [HttpDelete("DeleteQuestion/{id}")]
         public async Task<IActionResult> DeleteQuestion(int id, [FromServices] IGenericRepository<ExamQuestion> questionRepo)
         {
             var question = await questionRepo.GetByIdAsync(id);
             if (question == null)
-                return NotFound(new ResultDto { Status = false, Message = "Soru bulunamadı." });
+                return NotFound(new ResultDto { Status = false, Message = "Soru bulunamadi." });
 
             question.IsActive = false;
             questionRepo.Update(question);
             await questionRepo.SaveAsync();
-
             return Ok(new ResultDto { Status = true, Message = "Soru silindi." });
-        }   
+        }
+
         [Authorize(Roles = "Teacher")]
         [HttpPut("UpdateQuestion")]
         public async Task<IActionResult> UpdateQuestion(QuestionUpdateDto model, [FromServices] IGenericRepository<ExamQuestion> questionRepo)
         {
             var question = await questionRepo.GetByIdAsync(model.Id);
             if (question == null)
-                return NotFound(new ResultDto { Status = false, Message = "Soru bulunamadı." });
+                return NotFound(new ResultDto { Status = false, Message = "Soru bulunamadi." });
 
-            // Aynı sınavdaki diğer soruların toplam puanını hesapla (güncellenen hariç)
             var otherQuestionsTotal = await questionRepo.AsQueryable()
                 .Where(q => q.ExamId == question.ExamId && q.Id != model.Id && q.IsActive)
                 .SumAsync(q => q.Points);
 
             if (otherQuestionsTotal + model.Points > 100)
-                return BadRequest(new ResultDto { Status = false, Message = $"Sınav toplam puanı 100'ü aşıyor! Kalan puan: {100 - otherQuestionsTotal}" });
+                return BadRequest(new ResultDto { Status = false, Message = "Sinav toplam puani 100u asiyor! Kalan puan: " + (100 - otherQuestionsTotal) });
 
             question.QuestionText = model.QuestionText;
             question.Points = model.Points;
             questionRepo.Update(question);
             await questionRepo.SaveAsync();
-
-            return Ok(new ResultDto { Status = true, Message = "Soru güncellendi." });
+            return Ok(new ResultDto { Status = true, Message = "Soru guncellendi." });
         }
-
     }
 }
